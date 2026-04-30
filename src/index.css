@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@layer utilities {
+  .font-abhaya {
+    font-family: 'Abhaya Libre', serif;
+    font-weight: 800;
+  }
+}
