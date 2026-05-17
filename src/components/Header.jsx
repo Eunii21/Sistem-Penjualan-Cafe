@@ -1,7 +1,9 @@
 function Header() {
   return (
     <div className="px-6 py-4">
-      <h2 className="text-3xl font-abhaya">DASHBOARD</h2>
+      <h1 className="text-3xl font-abhaya text-[#2b1a17]">
+        DASHBOARD
+      </h1>
     </div>
   );
 }

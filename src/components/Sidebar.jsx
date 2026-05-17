@@ -1,44 +1,71 @@
-import { Home, DollarSign, Menu as MenuIcon, ShoppingCart } from "lucide-react";
+import {
+  Home,
+  DollarSign,
+  Menu as MenuIcon,
+  ShoppingCart,
+  X
+} from "lucide-react";
 
-function Sidebar({ open }) {
+function Sidebar({ open, setOpen }) {
   return (
-   <div
-  className={`fixed top-0 left-0 h-screen bg-[#5c3a32] text-white transition-all duration-300 z-50 ${
-    open ? "w-64" : "w-16"
-  }`}
->
-      {/* Logo */}
-      <div className="p-4 border-b border-[#3b1f1a]">
-        {open ? (
+    <>
+      {/* OVERLAY MOBILE */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`
+          bg-[#5c3a32] text-white z-50 transition-all duration-300
+
+          /* MOBILE */
+          fixed top-0 left-0 w-64 h-screen
+          ${open ? "translate-x-0" : "-translate-x-full"}
+
+          /* DESKTOP */
+          md:static
+          md:translate-x-0
+          md:w-64
+          md:h-auto
+          md:min-h-screen
+          md:overflow-y-auto
+        `}
+      >
+
+        {/* HEADER */}
+        <div className="p-4 border-b border-[#3b1f1a] flex justify-between items-center">
           <h1 className="font-abhaya text-lg">Mesombang Cafe</h1>
-        ) : (
-          <span className="text-center block">☕</span>
-        )}
-      </div>
 
-      {/* Menu */}
-      <ul className="mt-4 space-y-3 px-2">
-        <li className="flex items-center gap-3 p-2 hover:bg-[#3b1f1a] rounded cursor-pointer">
-          <Home />
-          {open && <span>Dashboard</span>}
-        </li>
+          <button
+            className="md:hidden"
+            onClick={() => setOpen(false)}
+          >
+            <X size={20} />
+          </button>
+        </div>
 
-        <li className="flex items-center gap-3 p-2 hover:bg-[#3b1f1a] rounded cursor-pointer">
-          <DollarSign />
-          {open && <span>Transaksi</span>}
-        </li>
+        {/* MENU */}
+        <ul className="mt-4 space-y-2 px-2">
+          <Item icon={<Home />} text="Dashboard" />
+          <Item icon={<DollarSign />} text="Transaksi" />
+          <Item icon={<MenuIcon />} text="Menu" />
+          <Item icon={<ShoppingCart />} text="Stok" />
+        </ul>
 
-        <li className="flex items-center gap-3 p-2 hover:bg-[#3b1f1a] rounded cursor-pointer">
-          <MenuIcon />
-          {open && <span>Menu</span>}
-        </li>
+      </aside>
+    </>
+  );
+}
 
-        <li className="flex items-center gap-3 p-2 hover:bg-[#3b1f1a] rounded cursor-pointer">
-          <ShoppingCart />
-          {open && <span>Stok</span>}
-        </li>
-      </ul>
-    </div>
+function Item({ icon, text }) {
+  return (
+    <li className="flex items-center gap-3 p-2 hover:bg-[#3b1f1a] rounded cursor-pointer">
+      {icon}
+      <span>{text}</span>
+    </li>
   );
 }
 
