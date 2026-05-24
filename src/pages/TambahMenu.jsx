@@ -1,719 +1,265 @@
-import { X } from "lucide-react";
 import { useState } from "react";
+import { X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../database/supabase";
 
-import { supabase } from "../lib/supabase";
-
-function TambahMenu() {
-
+export default function TambahMenu() {
   const navigate = useNavigate();
 
-  // STATE
-  const [preview, setPreview] = useState(null);
-
   const [namaMenu, setNamaMenu] = useState("");
+  const [kategori, setKategori] = useState("1");
 
-  const [kategori, setKategori] =
-    useState("Makanan");
+  const [hargaMakanan, setHargaMakanan] = useState("");
+  const [hargaDingin, setHargaDingin] = useState("");
+  const [hargaPanas, setHargaPanas] = useState("");
 
-  const [hargaMakanan, setHargaMakanan] =
-    useState("");
+  const [gambar, setGambar] = useState(null);
 
-  const [hargaPanas, setHargaPanas] =
-    useState("");
-
-  const [hargaDingin, setHargaDingin] =
-    useState("");
-
-  const [gambarFile, setGambarFile] =
-    useState(null);
-
-  const [loading, setLoading] =
-    useState(false);
-
-  // HANDLE IMAGE
-  const handleImage = (e) => {
-
-    const file = e.target.files[0];
-
-    if (file) {
-
-      setPreview(
-        URL.createObjectURL(file)
-      );
-
-      setGambarFile(file);
-    }
-  };
-
-  // SIMPAN DATA
-  const handleSimpan = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
     try {
+      let imageUrl = null;
 
-      setLoading(true);
+      // =========================
+      // UPLOAD GAMBAR OPTIONAL
+      // =========================
+      if (gambar) {
+        const fileExt = gambar.name.split(".").pop();
 
-      let gambarUrl = "";
+        const fileName = `${Date.now()}.${fileExt}`;
 
-      // UPLOAD GAMBAR
-      if (gambarFile) {
-
-        const fileName =
-          Date.now() + "-" + gambarFile.name;
-
-        const { error: uploadError } =
-          await supabase.storage
-            .from("menu")
-            .upload(fileName, gambarFile);
+        const { error: uploadError } = await supabase.storage
+          .from("menu-gambar")
+          .upload(fileName, gambar);
 
         if (uploadError) {
-
-          alert("Upload gambar gagal");
-
           console.log(uploadError);
-
+          alert(uploadError.message);
           return;
         }
 
-        const { data } =
-          supabase.storage
-            .from("menu")
-            .getPublicUrl(fileName);
+        const {
+          data: { publicUrl },
+        } = supabase.storage
+          .from("menu-gambar")
+          .getPublicUrl(fileName);
 
-        gambarUrl = data.publicUrl;
+        imageUrl = publicUrl;
       }
 
-      // SIMPAN DATABASE
-      const { error } =
-        await supabase
-          .from("menu")
-          .insert([
-            {
-              nama_menu: namaMenu,
+      // =========================
+      // INSERT DATABASE
+      // =========================
+      const { error } = await supabase.from("Menu").insert([
+        {
+          nama_menu: namaMenu,
 
-              kategori: kategori,
+          // SESUAI DATABASE KAMU
+          Id_kategori: Number(kategori),
 
-              harga_makanan:
-                kategori === "Makanan"
-                  ? hargaMakanan
-                  : null,
+          harga_makanan:
+            kategori === "1"
+              ? Number(hargaMakanan)
+              : null,
 
-              harga_panas:
-                kategori === "Minuman"
-                  ? hargaPanas
-                  : null,
+          harga_dingin:
+            kategori === "2"
+              ? Number(hargaDingin)
+              : null,
 
-              harga_dingin:
-                kategori === "Minuman"
-                  ? hargaDingin
-                  : null,
+          harga_panas:
+            kategori === "2"
+              ? Number(hargaPanas)
+              : null,
 
-              gambar: gambarUrl,
-            },
-          ]);
+          gambar: imageUrl,
+        },
+      ]);
 
       if (error) {
-
         console.log(error);
-
-        alert("Data gagal disimpan");
-
-      } else {
-
-        alert("Menu berhasil ditambahkan");
-
-        navigate("/dashboard/menu");
+        alert(error.message);
+        return;
       }
 
+      alert("Menu berhasil ditambahkan");
+
+      navigate("/dashboard/menu");
     } catch (err) {
-
       console.log(err);
-
       alert("Terjadi kesalahan");
-
-    } finally {
-
-      setLoading(false);
     }
   };
 
   return (
-    <>
-      {/* OVERLAY */}
-      <div
-        className="
-          fixed inset-0
-          bg-black/20
-          backdrop-blur-[3px]
-          z-40
-        "
-      />
-
-      {/* MODAL */}
-      <div
-        className="
-          fixed inset-0
-          z-50
-          flex
-          items-center
-          justify-center
-          p-3 md:p-6
-        "
-      >
-
-        <div
-          className="
-            relative
-            w-full
-            max-w-2xl
-            bg-[#f4f1ee]
-            rounded-2xl
-            shadow-2xl
-            overflow-y-auto
-            max-h-[95vh]
-          "
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-5 overflow-y-auto">
+      <div className="bg-[#F6F1EB] w-full max-w-6xl rounded-3xl p-10 relative">
+        {/* CLOSE */}
+        <button
+          onClick={() => navigate("/dashboard/menu")}
+          className="absolute top-6 right-6"
         >
+          <X size={30} />
+        </button>
 
-          {/* CLOSE */}
-          <button
-            onClick={() =>
-              navigate("/dashboard/menu")
-            }
-            className="
-              absolute
-              top-4
-              right-4
-              text-[#4b2a24]
-              hover:opacity-70
-              transition
-            "
-          >
-            <X size={22} />
-          </button>
+        {/* TITLE */}
+        <h1 className="text-5xl font-bold text-center text-[#4B2E2B] mb-14">
+          Tambah Menu
+        </h1>
 
-          {/* HEADER */}
-          <div className="pt-8 md:pt-10 text-center">
-
-            <h1
-              className="
-                text-2xl
-                md:text-4xl
-                font-bold
-                text-[#4b2a24]
-              "
-            >
-              Tambah Menu
-            </h1>
-
-          </div>
-
-          {/* FORM */}
-          <div
-            className="
-              px-5
-              md:px-14
-              py-8
-              md:py-10
-            "
-          >
-
-            <div className="space-y-6">
-
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14">
+            {/* LEFT */}
+            <div className="space-y-8">
               {/* NAMA MENU */}
-              <div
-                className="
-                  flex
-                  flex-col
-                  md:flex-row
-                  md:items-center
-                  gap-3 md:gap-5
-                "
-              >
-
-                <label
-                  className="
-                    md:w-44
-                    text-sm
-                    md:text-base
-                    font-semibold
-                    text-[#4b2a24]
-                  "
-                >
+              <div>
+                <label className="block text-2xl font-semibold mb-3">
                   Nama Menu
                 </label>
 
                 <input
                   type="text"
                   value={namaMenu}
-                  onChange={(e) =>
-                    setNamaMenu(e.target.value)
-                  }
-                  placeholder="Masukkan nama menu"
-                  className="
-                    flex-1
-                    border
-                    border-gray-300
-                    bg-white
-                    px-4
-                    py-2.5
-                    rounded-md
-                    outline-none
-                    text-sm
-                    md:text-base
-                    focus:ring-2
-                    focus:ring-[#5c3a32]
-                  "
+                  onChange={(e) => setNamaMenu(e.target.value)}
+                  required
+                  className="w-full border-2 border-[#4B2E2B] rounded-2xl px-5 py-4 text-xl bg-white"
                 />
-
               </div>
 
               {/* KATEGORI */}
-              <div
-                className="
-                  flex
-                  flex-col
-                  md:flex-row
-                  md:items-center
-                  gap-3 md:gap-5
-                "
-              >
-
-                <label
-                  className="
-                    md:w-44
-                    text-sm
-                    md:text-base
-                    font-semibold
-                    text-[#4b2a24]
-                  "
-                >
+              <div>
+                <label className="block text-2xl font-semibold mb-3">
                   Kategori
                 </label>
 
                 <select
                   value={kategori}
-                  onChange={(e) =>
-                    setKategori(e.target.value)
-                  }
-                  className="
-                    w-full
-                    md:w-[220px]
-                    border
-                    border-gray-300
-                    bg-white
-                    px-4
-                    py-2.5
-                    rounded-md
-                    outline-none
-                    text-sm
-                    md:text-base
-                    focus:ring-2
-                    focus:ring-[#5c3a32]
-                  "
+                  onChange={(e) => setKategori(e.target.value)}
+                  className="w-full border-2 border-[#4B2E2B] rounded-2xl px-5 py-4 text-xl bg-white"
                 >
-
-                  <option value="Makanan">
-                    Makanan
-                  </option>
-
-                  <option value="Minuman">
-                    Minuman
-                  </option>
-
+                  <option value="1">Makanan</option>
+                  <option value="2">Minuman</option>
                 </select>
-
               </div>
 
               {/* HARGA MAKANAN */}
-              {kategori === "Makanan" && (
-
-                <div
-                  className="
-                    flex
-                    flex-col
-                    md:flex-row
-                    md:items-center
-                    gap-3 md:gap-5
-                  "
-                >
-
-                  <label
-                    className="
-                      md:w-44
-                      text-sm
-                      md:text-base
-                      font-semibold
-                      text-[#4b2a24]
-                    "
-                  >
+              {kategori === "1" && (
+                <div>
+                  <label className="block text-2xl font-semibold mb-3">
                     Harga Makanan
                   </label>
 
-                  <div className="relative w-full md:w-[220px]">
-
-                    <span
-                      className="
-                        absolute
-                        left-4
-                        top-1/2
-                        -translate-y-1/2
-                        text-gray-500
-                        text-sm
-                      "
-                    >
-                      Rp
-                    </span>
-
-                    <input
-                      type="text"
-                      value={hargaMakanan}
-                      onChange={(e) =>
-                        setHargaMakanan(
-                          e.target.value
-                        )
-                      }
-                      placeholder="Masukkan harga"
-                      className="
-                        w-full
-                        border
-                        border-gray-300
-                        bg-white
-                        pl-12
-                        pr-4
-                        py-2.5
-                        rounded-md
-                        outline-none
-                        text-sm
-                        md:text-base
-                        focus:ring-2
-                        focus:ring-[#5c3a32]
-                      "
-                    />
-
-                  </div>
-
+                  <input
+                    type="number"
+                    value={hargaMakanan}
+                    onChange={(e) =>
+                      setHargaMakanan(e.target.value)
+                    }
+                    required
+                    className="w-full border-2 border-[#4B2E2B] rounded-2xl px-5 py-4 text-xl bg-white"
+                  />
                 </div>
               )}
 
               {/* HARGA MINUMAN */}
-              {kategori === "Minuman" && (
-
-                <div className="space-y-5">
-
-                  {/* PANAS */}
-                  <div
-                    className="
-                      flex
-                      flex-col
-                      md:flex-row
-                      gap-3 md:gap-5
-                    "
-                  >
-
-                    <label
-                      className="
-                        md:w-44
-                        text-sm
-                        md:text-base
-                        font-semibold
-                        text-[#4b2a24]
-                      "
-                    >
-                      Harga Minuman
+              {kategori === "2" && (
+                <>
+                  <div>
+                    <label className="block text-2xl font-semibold mb-3">
+                      Harga Dingin
                     </label>
 
-                    <div className="w-full md:w-[220px]">
-
-                      <p
-                        className="
-                          text-sm
-                          text-[#4b2a24]
-                          mb-2
-                        "
-                      >
-                        Panas
-                      </p>
-
-                      <div className="relative">
-
-                        <span
-                          className="
-                            absolute
-                            left-4
-                            top-1/2
-                            -translate-y-1/2
-                            text-gray-500
-                            text-sm
-                          "
-                        >
-                          Rp
-                        </span>
-
-                        <input
-                          type="text"
-                          value={hargaPanas}
-                          onChange={(e) =>
-                            setHargaPanas(
-                              e.target.value
-                            )
-                          }
-                          placeholder="Masukkan harga"
-                          className="
-                            w-full
-                            border
-                            border-gray-300
-                            bg-white
-                            pl-12
-                            pr-4
-                            py-2.5
-                            rounded-md
-                            outline-none
-                            text-sm
-                            md:text-base
-                            focus:ring-2
-                            focus:ring-[#5c3a32]
-                          "
-                        />
-
-                      </div>
-
-                    </div>
-
+                    <input
+                      type="number"
+                      value={hargaDingin}
+                      onChange={(e) =>
+                        setHargaDingin(e.target.value)
+                      }
+                      required
+                      className="w-full border-2 border-[#4B2E2B] rounded-2xl px-5 py-4 text-xl bg-white"
+                    />
                   </div>
 
-                  {/* DINGIN */}
-                  <div
-                    className="
-                      flex
-                      flex-col
-                      md:flex-row
-                      gap-3 md:gap-5
-                    "
-                  >
-
-                    <label className="md:w-44"></label>
-
-                    <div className="w-full md:w-[220px]">
-
-                      <p
-                        className="
-                          text-sm
-                          text-[#4b2a24]
-                          mb-2
-                        "
-                      >
-                        Dingin
-                      </p>
-
-                      <div className="relative">
-
-                        <span
-                          className="
-                            absolute
-                            left-4
-                            top-1/2
-                            -translate-y-1/2
-                            text-gray-500
-                            text-sm
-                          "
-                        >
-                          Rp
-                        </span>
-
-                        <input
-                          type="text"
-                          value={hargaDingin}
-                          onChange={(e) =>
-                            setHargaDingin(
-                              e.target.value
-                            )
-                          }
-                          placeholder="Masukkan harga"
-                          className="
-                            w-full
-                            border
-                            border-gray-300
-                            bg-white
-                            pl-12
-                            pr-4
-                            py-2.5
-                            rounded-md
-                            outline-none
-                            text-sm
-                            md:text-base
-                            focus:ring-2
-                            focus:ring-[#5c3a32]
-                          "
-                        />
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                </div>
-              )}
-
-              {/* GAMBAR */}
-              <div
-                className="
-                  flex
-                  flex-col
-                  md:flex-row
-                  gap-3 md:gap-5
-                "
-              >
-
-                <label
-                  className="
-                    md:w-44
-                    text-sm
-                    md:text-base
-                    font-semibold
-                    text-[#4b2a24]
-                  "
-                >
-                  Gambar
-                </label>
-
-                <div className="flex-1">
-
-                  <label
-                    className="
-                      border
-                      border-gray-300
-                      bg-gray-200
-                      rounded-md
-                      h-36 md:h-40
-                      w-full
-                      flex
-                      items-center
-                      justify-center
-                      cursor-pointer
-                      overflow-hidden
-                      hover:bg-gray-300
-                      transition
-                    "
-                  >
-
-                    {preview ? (
-
-                      <img
-                        src={preview}
-                        alt="preview"
-                        className="
-                          w-full
-                          h-full
-                          object-cover
-                        "
-                      />
-
-                    ) : (
-
-                      <div className="text-center px-3">
-
-                        <p
-                          className="
-                            text-[#4b2a24]
-                            text-sm
-                            md:text-base
-                            font-medium
-                          "
-                        >
-                          Klik untuk upload gambar
-                        </p>
-
-                        <p
-                          className="
-                            text-xs
-                            text-gray-600
-                            mt-1
-                          "
-                        >
-                          Format JPG, PNG (maks 2MB)
-                        </p>
-
-                      </div>
-                    )}
+                  <div>
+                    <label className="block text-2xl font-semibold mb-3">
+                      Harga Panas
+                    </label>
 
                     <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImage}
+                      type="number"
+                      value={hargaPanas}
+                      onChange={(e) =>
+                        setHargaPanas(e.target.value)
+                      }
+                      required
+                      className="w-full border-2 border-[#4B2E2B] rounded-2xl px-5 py-4 text-xl bg-white"
                     />
-
-                  </label>
-
-                </div>
-
-              </div>
-
-              {/* BUTTON */}
-              <div
-                className="
-                  flex
-                  justify-end
-                  gap-3
-                  pt-4
-                "
-              >
-
-                <button
-                  onClick={() =>
-                    navigate("/dashboard/menu")
-                  }
-                  className="
-                    px-5
-                    md:px-6
-                    py-2
-                    rounded-md
-                    border
-                    border-gray-400
-                    bg-white
-                    hover:bg-gray-100
-                    text-sm
-                    md:text-base
-                    transition
-                  "
-                >
-                  Batal
-                </button>
-
-                <button
-                  onClick={handleSimpan}
-                  disabled={loading}
-                  className="
-                    px-5
-                    md:px-6
-                    py-2
-                    rounded-md
-                    bg-[#5c3a32]
-                    hover:bg-[#3b1f1a]
-                    text-white
-                    text-sm
-                    md:text-base
-                    transition
-                    disabled:opacity-50
-                  "
-                >
-                  {loading
-                    ? "Menyimpan..."
-                    : "Simpan"}
-                </button>
-
-              </div>
-
+                  </div>
+                </>
+              )}
             </div>
 
+            {/* RIGHT */}
+            <div>
+              <label className="block text-2xl font-semibold mb-3">
+                Gambar
+              </label>
+
+              <label className="border-2 border-dashed border-[#4B2E2B] rounded-3xl h-[420px] flex flex-col items-center justify-center cursor-pointer bg-white overflow-hidden">
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={(e) =>
+                    setGambar(e.target.files[0])
+                  }
+                />
+
+                {gambar ? (
+                  <img
+                    src={URL.createObjectURL(gambar)}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <>
+                    <p className="text-4xl font-semibold text-center text-[#4B2E2B]">
+                      Klik untuk upload gambar
+                    </p>
+
+                    <p className="mt-4 text-xl text-gray-500">
+                      JPG / PNG maksimal 2MB
+                    </p>
+
+                    <p className="mt-3 text-lg text-gray-400">
+                      Gambar tidak wajib
+                    </p>
+                  </>
+                )}
+              </label>
+            </div>
           </div>
 
-        </div>
+          {/* BUTTON */}
+          <div className="flex justify-end gap-5 mt-14">
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/menu")}
+              className="border-2 border-[#4B2E2B] px-10 py-4 rounded-2xl text-xl"
+            >
+              Batal
+            </button>
 
+            <button
+              type="submit"
+              className="bg-[#4B2E2B] text-white px-10 py-4 rounded-2xl text-xl"
+            >
+              Simpan
+            </button>
+          </div>
+        </form>
       </div>
-    </>
+    </div>
   );
 }
-
-export default TambahMenu;
