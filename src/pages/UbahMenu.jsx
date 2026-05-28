@@ -267,6 +267,7 @@ export default function UbahMenu() {
                   </span>
                   <input
                     type="number"
+                    min="0"
                     value={hargaMakanan}
                     onChange={(e) => setHargaMakanan(e.target.value)}
                     required={kategori === "1"}
@@ -300,6 +301,7 @@ export default function UbahMenu() {
                     </span>
                     <input
                       type="number"
+                      min="0"
                       value={hargaPanas}
                       onChange={(e) => setHargaPanas(e.target.value)}
                       required={kategori === "2"}
@@ -323,6 +325,7 @@ export default function UbahMenu() {
                     </span>
                     <input
                       type="number"
+                      min="0"
                       value={hargaDingin}
                       onChange={(e) => setHargaDingin(e.target.value)}
                       required={kategori === "2"}

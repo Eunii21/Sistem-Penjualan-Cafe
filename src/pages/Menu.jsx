@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../database/supabase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Search,
   PlusCircle,
@@ -8,10 +8,12 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
+  ShoppingCart,
 } from "lucide-react";
 
 export default function Menu() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [menuData, setMenuData] = useState([]);
   const [search, setSearch] = useState("");
@@ -23,8 +25,23 @@ export default function Menu() {
   // DROPDOWN TITIK TIGA
   const [openMenuId, setOpenMenuId] = useState(null);
 
+  // STATE KERANJANG
+  const [pesanan, setPesanan] = useState({});
+
+  // ==========================================
+  // STATE BARU: UNTUK MODAL SELEKSI MINUMAN
+  // ==========================================
+  const [showVarianModal, setShowVarianModal] = useState(false);
+  const [selectedItemMinuman, setSelectedItemMinuman] = useState(null);
+  const [varianTerpilih, setVarianTerpilih] = useState("Panas"); // Default opsi awal
+
   useEffect(() => {
     getMenu();
+
+    // AMBIL PESANAN JIKA KEMBALI DARI TRANSAKSI
+    if (location.state?.pesanan) {
+      setPesanan(location.state.pesanan);
+    }
   }, []);
 
   async function getMenu() {
@@ -48,21 +65,132 @@ export default function Menu() {
 
     if (!confirmDelete) return;
 
-    const { error } = await supabase
-      .from("Menu")
-      .delete()
-      .eq("id", id);
+    try {
 
-    if (error) {
-      alert("Gagal menghapus menu");
-      console.log(error);
-    } else {
-      setOpenMenuId(null); // Tutup dropdown setelah hapus
+      // =========================================
+      // HAPUS DETAIL PESANAN TERLEBIH DAHULU
+      // =========================================
+      const { error: detailError } = await supabase
+        .from("Detail_Pesanan")
+        .delete()
+        .eq("id_menu", id);
+
+      if (detailError) {
+        console.log("DETAIL ERROR:", detailError);
+      }
+
+      // =========================================
+      // HAPUS MENU
+      // =========================================
+      const { error } = await supabase
+        .from("Menu")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.log("DELETE ERROR:", error);
+        alert("Gagal menghapus menu");
+        return;
+      }
+
+      alert("Menu berhasil dihapus");
+
+      setOpenMenuId(null);
+
       getMenu();
+
+    } catch (err) {
+      console.log(err);
+      alert("Terjadi kesalahan");
     }
   }
 
-  // FILTER
+  // LOGIKA UTAMA: HANDLING TAMBAH PESANAN & SELEKSI MINUMAN
+  const handleTambahPesanan = (item) => {
+    // Deteksi jika item tidak memiliki harga_makanan, berarti item tersebut adalah MINUMAN
+    const apakahMinuman = !item.harga_makanan && (item.harga_dingin || item.harga_panas);
+
+    if (apakahMinuman) {
+      // Jika sudah pernah dipilih variannya, tombol luar tinggal menambah kuantitas biasa
+      if (pesanan[item.id]) {
+        setPesanan((prev) => ({
+          ...prev,
+          [item.id]: {
+            ...prev[item.id],
+            jumlah: prev[item.id].jumlah + 1,
+          },
+        }));
+      } else {
+        // Jika belum ada di keranjang, buka modal pop-up pilihan suhu
+        setSelectedItemMinuman(item);
+        setVarianTerpilih("Panas"); // reset default ke panas tiap buka modal
+        setShowVarianModal(true);
+      }
+    } else {
+      // JIKA MAKANAN: Langsung masuk ke keranjang tanpa lewat pop-up modal
+      setPesanan((prev) => ({
+        ...prev,
+        [item.id]: {
+          jumlah: (prev[item.id]?.jumlah || 0) + 1,
+          varian: null,
+          harga_terpilih: item.harga_makanan || item.harga || 0,
+        },
+      }));
+    }
+  };
+
+  // HANDLER SUBMIT MODAL MINUMAN
+  const handleSimpanVarianMinuman = () => {
+    if (!selectedItemMinuman) return;
+
+    // Tentukan harga real berdasarkan tombol suhu yang diklik user
+    const hargaFix = varianTerpilih === "Panas"
+      ? (selectedItemMinuman.harga_panas || selectedItemMinuman.harga)
+      : (selectedItemMinuman.harga_dingin || selectedItemMinuman.harga);
+
+    setPesanan((prev) => ({
+      ...prev,
+      [selectedItemMinuman.id]: {
+        jumlah: 1,
+        varian: varianTerpilih,
+        harga_terpilih: hargaFix,
+      },
+    }));
+
+    setShowVarianModal(false);
+    setSelectedItemMinuman(null);
+  };
+
+  // KURANG PESANAN
+  const handleKurangPesanan = (id) => {
+    setPesanan((prev) => {
+      const itemAda = prev[id];
+      if (!itemAda) return prev;
+
+      const jumlahBaru = itemAda.jumlah - 1;
+
+      if (jumlahBaru <= 0) {
+        const { [id]: _, ...sisaPesanan } = prev;
+        return sisaPesanan;
+      }
+
+      return {
+        ...prev,
+        [id]: {
+          ...itemAda,
+          jumlah: jumlahBaru,
+        },
+      };
+    });
+  };
+
+  // TOTAL ITEM KERANJANG
+  const totalItemKeranjang = Object.values(pesanan).reduce(
+    (total, item) => total + item.jumlah,
+    0
+  );
+
+  // FILTER MENU
   const filteredMenu = menuData.filter((item) => {
     const cocokSearch = item.nama_menu
       ?.toLowerCase()
@@ -72,7 +200,6 @@ export default function Menu() {
       return cocokSearch;
     }
 
-    // MAKANAN
     if (
       kategori === "Makanan" &&
       item.harga_makanan
@@ -80,7 +207,6 @@ export default function Menu() {
       return cocokSearch;
     }
 
-    // MINUMAN
     if (
       kategori === "Minuman" &&
       (item.harga_dingin || item.harga_panas)
@@ -95,11 +221,12 @@ export default function Menu() {
     <div
       style={{
         padding: "20px 30px",
-        background: "#EFE6DB", // Warna krem latar belakang sesuai gambar
+        background: "#EFE6DB",
         minHeight: "100vh",
+        position: "relative",
       }}
     >
-      {/* SEARCH BAR (Lebar penuh, background putih bersih) */}
+      {/* SEARCH */}
       <div
         style={{
           marginBottom: "20px",
@@ -136,7 +263,7 @@ export default function Menu() {
         />
       </div>
 
-      {/* FILTER BUTTONS ROW */}
+      {/* FILTER */}
       <div
         style={{
           display: "flex",
@@ -147,9 +274,11 @@ export default function Menu() {
       >
         {/* TAMBAH MENU */}
         <button
-          onClick={() => navigate("/dashboard/tambah-menu")}
+          onClick={() =>
+            navigate("/dashboard/tambah-menu")
+          }
           style={{
-            background: "#4A2E2B", // Cokelat tua khas kafe
+            background: "#4A2E2B",
             color: "white",
             border: "none",
             borderRadius: "8px",
@@ -166,10 +295,12 @@ export default function Menu() {
           Tambah menu
         </button>
 
-        {/* DROPDOWN KATEGORI */}
+        {/* DROPDOWN */}
         <div style={{ position: "relative" }}>
           <button
-            onClick={() => setShowKategori(!showKategori)}
+            onClick={() =>
+              setShowKategori(!showKategori)
+            }
             style={{
               background: "#4A2E2B",
               color: "white",
@@ -183,10 +314,13 @@ export default function Menu() {
               alignItems: "center",
               gap: "8px",
               minWidth: "120px",
-              justify: "space-between",
+              justifyContent: "space-between",
             }}
           >
-            {kategori === "Semua" ? "Kategori" : kategori}
+            {kategori === "Semua"
+              ? "Kategori"
+              : kategori}
+
             <ChevronDown size={16} />
           </button>
 
@@ -200,11 +334,16 @@ export default function Menu() {
                 width: "100%",
                 borderRadius: "8px",
                 overflow: "hidden",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                boxShadow:
+                  "0 4px 12px rgba(0,0,0,0.1)",
                 zIndex: 10,
               }}
             >
-              {["Semua", "Makanan", "Minuman"].map((item) => (
+              {[
+                "Semua",
+                "Makanan",
+                "Minuman",
+              ].map((item) => (
                 <div
                   key={item}
                   onClick={() => {
@@ -214,7 +353,8 @@ export default function Menu() {
                   style={{
                     padding: "10px 14px",
                     cursor: "pointer",
-                    borderBottom: "1px solid #F0EAE1",
+                    borderBottom:
+                      "1px solid #F0EAE1",
                     fontWeight: "500",
                     fontSize: "13px",
                     color: "#333",
@@ -228,210 +368,595 @@ export default function Menu() {
         </div>
       </div>
 
-      {/* GRID KARTU MENU */}
+      {/* GRID MENU */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fill, minmax(180px, 1fr))",
           gap: "20px",
         }}
       >
-        {filteredMenu.map((item) => (
-          <div
-            key={item.id}
-            style={{
-              background: "white",
-              borderRadius: "12px",
-              padding: "8px",
-              position: "relative",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}
-          >
-            {/* TITIK TIGA KONTROL */}
+        {filteredMenu.map((item) => {
+          const jumlahItem =
+            pesanan[item.id]?.jumlah || 0;
+
+          const isStokHabis =
+            item.stok === false ||
+            item.stok <= 0;
+
+          return (
             <div
+              key={item.id}
               style={{
-                position: "absolute",
-                top: "12px",
-                right: "12px",
-                zIndex: 5,
+                background: "white",
+                borderRadius: "12px",
+                padding: "8px",
+                position: "relative",
+                boxShadow:
+                  "0 2px 6px rgba(0,0,0,0.05)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                height: "215px",
               }}
             >
-              <button
-                onClick={() =>
-                  setOpenMenuId(
-                    openMenuId === item.id ? null : item.id
-                  )
-                }
+              {/* TITIK TIGA */}
+              <div
                 style={{
-                  border: "none",
-                  background: "rgba(255, 255, 255, 0.8)",
-                  borderRadius: "50%",
-                  width: "24px",
-                  height: "24px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
+                  position: "absolute",
+                  top: "12px",
+                  right: "12px",
+                  zIndex: 5,
                 }}
               >
-                <MoreVertical size={14} color="#333" />
-              </button>
-
-              {/* DROPDOWN EDIT / HAPUS */}
-              {openMenuId === item.id && (
-                <div
+                <button
+                  onClick={() =>
+                    setOpenMenuId(
+                      openMenuId === item.id
+                        ? null
+                        : item.id
+                    )
+                  }
                   style={{
-                    position: "absolute",
-                    top: "28px",
-                    right: 0,
-                    background: "white",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                    overflow: "hidden",
-                    minWidth: "110px",
+                    border: "none",
+                    background:
+                      "rgba(255,255,255,0.8)",
+                    borderRadius: "50%",
+                    width: "24px",
+                    height: "24px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
                   }}
                 >
-                  {/* TOMBOL UBAH MENU DIKONDISIKAN MENGGUNAKAN URL PARAMETER */}
+                  <MoreVertical
+                    size={14}
+                    color="#333"
+                  />
+                </button>
+
+                {openMenuId === item.id && (
                   <div
-                    onClick={() => {
-                      setOpenMenuId(null);
-                      navigate(`/dashboard/ubah-menu/${item.id}`);
-                    }}
                     style={{
-                      padding: "8px 12px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "13px",
-                      borderBottom: "1px solid #eee",
-                      color: "#333",
+                      position: "absolute",
+                      top: "28px",
+                      right: 0,
+                      background: "white",
+                      borderRadius: "8px",
+                      boxShadow:
+                        "0 4px 12px rgba(0,0,0,0.15)",
+                      overflow: "hidden",
+                      minWidth: "110px",
                     }}
                   >
-                    <Pencil size={12} />
-                    Ubah
+                    <div
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        navigate(
+                          `/dashboard/ubah-menu/${item.id}`
+                        );
+                      }}
+                      style={{
+                        padding: "8px 12px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "13px",
+                        borderBottom:
+                          "1px solid #eee",
+                        color: "#333",
+                      }}
+                    >
+                      <Pencil size={12} />
+                      Ubah
+                    </div>
+
+                    <div
+                      onClick={() =>
+                        handleDelete(item.id)
+                      }
+                      style={{
+                        padding: "8px 12px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "13px",
+                        color: "red",
+                      }}
+                    >
+                      <Trash2 size={12} />
+                      Hapus
+                    </div>
                   </div>
+                )}
+              </div>
+
+              {/* FOTO */}
+              <img
+                src={
+                  item.gambar
+                    ? item.gambar
+                    : "https://via.placeholder.com/300x200?text=No+Image"
+                }
+                alt={item.nama_menu}
+                style={{
+                  width: "100%",
+                  height: "120px",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                  marginBottom: "8px",
+                }}
+              />
+
+              {/* INFO */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "2px 4px",
+                }}
+              >
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    marginRight: "5px",
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      margin: "0 0 4px 0",
+                      color: "#2B1B17",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {item.nama_menu}
+                  </h3>
 
                   <div
-                    onClick={() => handleDelete(item.id)}
                     style={{
-                      padding: "8px 12px",
-                      cursor: "pointer",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: "#666",
+                      minHeight: "28px",
                       display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "13px",
-                      color: "red",
+                      flexDirection: "column",
+                      justifyContent: "center",
                     }}
                   >
-                    <Trash2 size={12} />
-                    Hapus
+                    {item.harga_makanan && (
+                      <p style={{ margin: 0 }}>
+                        Rp{" "}
+                        {Number(
+                          item.harga_makanan
+                        ).toLocaleString(
+                          "id-ID"
+                        )}
+                      </p>
+                    )}
+
+                    {!item.harga_makanan && (
+                      <>
+                        {item.harga_dingin && (
+                          <p
+                            style={{
+                              margin:
+                                "0 0 1px 0",
+                            }}
+                          >
+                            D : Rp{" "}
+                            {Number(
+                              item.harga_dingin
+                            ).toLocaleString(
+                              "id-ID"
+                            )}
+                          </p>
+                        )}
+
+                        {item.harga_panas && (
+                          <p style={{ margin: 0 }}>
+                            P : Rp{" "}
+                            {Number(
+                              item.harga_panas
+                            ).toLocaleString(
+                              "id-ID"
+                            )}
+                          </p>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
-              )}
+
+                {/* BUTTON AKSI */}
+                {isStokHabis ? (
+                  <div
+                    style={{
+                      background: "#F2EFEA",
+                      color: "#A89F91",
+                      border:
+                        "1px solid #D1C7BD",
+                      borderRadius: "6px",
+                      padding: "5px 10px",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
+                      height: "26px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    Stok habis
+                  </div>
+                ) : jumlahItem > 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      background: "white",
+                      borderRadius: "6px",
+                      border:
+                        "1px solid #12A150",
+                      height: "26px",
+                      boxSizing: "border-box",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <button
+                      onClick={() =>
+                        handleKurangPesanan(
+                          item.id
+                        )
+                      }
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#12A150",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        width: "24px",
+                        height: "100%",
+                      }}
+                    >
+                      -
+                    </button>
+
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: "bold",
+                        color: "#12A150",
+                        minWidth: "16px",
+                        textAlign: "center",
+                      }}
+                    >
+                      {jumlahItem}
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        handleTambahPesanan(item)
+                      }
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#12A150",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        width: "24px",
+                        height: "100%",
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() =>
+                      handleTambahPesanan(item)
+                    }
+                    style={{
+                      background: "#12A150",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      width: "26px",
+                      height: "26px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "16px",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    +
+                  </button>
+                )}
+              </div>
             </div>
+          );
+        })}
+      </div>
 
-            {/* FOTO PRODUK */}
-            <img
-              src={
-                item.gambar
-                  ? item.gambar
-                  : "https://via.placeholder.com/300x200?text=No+Image"
+      {/* FLOATING CART (KIRIM DATA KE TRANSAKSI) */}
+      {totalItemKeranjang > 0 && (
+        <button
+          onClick={() => {
+            const dataKeranjang = menuData
+              .filter((item) => pesanan[item.id])
+              .map((item) => ({
+                id: item.id,
+                nama_menu: item.nama_menu,
+                gambar: item.gambar,
+                id_kategori: item.id_kategori,
+                // Gunakan harga real yang disimpan dari pilihan modal
+                harga: pesanan[item.id].harga_terpilih,
+                jumlah: pesanan[item.id].jumlah,
+                varian: pesanan[item.id].varian,
+                harga_panas: item.harga_panas,
+                harga_dingin: item.harga_dingin
+              }));
+
+            navigate(
+              "/dashboard/transaksi",
+              {
+                state: {
+                  cart: dataKeranjang,
+                  pesanan: pesanan,
+                },
               }
-              alt={item.nama_menu}
-              style={{
-                width: "100%",
-                height: "120px",
-                objectFit: "cover",
-                borderRadius: "8px",
-                marginBottom: "8px",
-              }}
-            />
+            );
+          }}
+          style={{
+            position: "fixed",
+            bottom: "30px",
+            right: "30px",
+            background: "#4A2E2B",
+            color: "white",
+            border: "none",
+            borderRadius: "50%",
+            width: "60px",
+            height: "60px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            boxShadow:
+              "0 4px 16px rgba(0,0,0,0.25)",
+            zIndex: 100,
+          }}
+        >
+          <ShoppingCart size={26} />
 
-            {/* INFO PRODUK & ACTION BUTTON */}
+          <div
+            style={{
+              position: "absolute",
+              top: "-2px",
+              right: "-2px",
+              background: "#12A150",
+              color: "white",
+              borderRadius: "50%",
+              minWidth: "22px",
+              height: "22px",
+              padding: "0 4px",
+              fontSize: "12px",
+              fontWeight: "bold",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "2px solid #EFE6DB",
+              boxSizing: "border-box",
+            }}
+          >
+            {totalItemKeranjang}
+          </div>
+        </button>
+      )}
+
+      {/* ========================================================
+          POP-UP MODAL BENTUK OPSIONAL SUHU MINUMAN (DESAIN ANDA)
+         ======================================================== */}
+      {showVarianModal && selectedItemMinuman && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              width: "90%",
+              maxWidth: "500px",
+              borderRadius: "14px",
+              padding: "20px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+              color: "#333",
+            }}
+          >
+            {/* Header Modal */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "flex-end",
-                padding: "2px 4px",
+                alignItems: "center",
+                borderBottom: "1px solid #EEE",
+                paddingBottom: "12px",
+                marginBottom: "20px",
               }}
             >
-              {/* NAMA DAN HARGA */}
-              <div style={{ flex: 1, minWidth: 0, marginRight: "5px" }}>
-                <h3
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    margin: "0 0 6px 0",
-                    color: "#2B1B17",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {item.nama_menu}
-                </h3>
+              <h3 style={{ fontSize: "16px", fontWeight: "700", margin: 0 }}>
+                Opsi Minuman: {selectedItemMinuman.nama_menu}
+              </h3>
+              <button
+                onClick={() => setShowVarianModal(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "18px",
+                  cursor: "pointer",
+                  color: "#999",
+                }}
+              >
+                ✕
+              </button>
+            </div>
 
+            {/* Container Dua Tombol Sesuai Gambar Desain */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "16px",
+                marginBottom: "15px",
+              }}
+            >
+              {/* OPSI PANAS */}
+              <div
+                onClick={() => setVarianTerpilih("Panas")}
+                style={{
+                  background: "#f15858ff",
+                  color: "white",
+                  borderRadius: "12px",
+                  padding: "20px 10px",
+                  textAlign: "center",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  border: varianTerpilih === "Panas" ? "4px solid #f15858ff" : "4px solid transparent",
+                  boxShadow: varianTerpilih === "Panas" ? "0 4px 12px rgba(242, 47, 47, 0.5)" : "none",
+                }}
+              >
+                <div style={{ fontSize: "28px", marginBottom: "8px" }}>☕</div>
+                <div style={{ fontWeight: "700", fontSize: "14px" }}>Panas (Hot)</div>
                 <div
                   style={{
-                    fontSize: "11px",
+                    background: "rgba(255,255,255,0.3)",
+                    borderRadius: "6px",
+                    padding: "3px 0",
+                    fontSize: "12px",
+                    marginTop: "10px",
                     fontWeight: "600",
-                    color: "#666",
                   }}
                 >
-                  {/* Kondisi Makanan */}
-                  {item.harga_makanan && (
-                    <p style={{ margin: 0 }}>
-                      Rp {Number(item.harga_makanan).toLocaleString("id-ID")}
-                    </p>
-                  )}
-
-                  {/* Kondisi Minuman */}
-                  {!item.harga_makanan && (
-                    <>
-                      {item.harga_dingin && (
-                        <p style={{ margin: "0 0 2px 0" }}>
-                          D : Rp {Number(item.harga_dingin).toLocaleString("id-ID")}
-                        </p>
-                      )}
-                      {item.harga_panas && (
-                        <p style={{ margin: 0 }}>
-                          P : Rp {Number(item.harga_panas).toLocaleString("id-ID")}
-                        </p>
-                      )}
-                    </>
-                  )}
+                  {varianTerpilih === "Panas" ? "Terpilih" : "Pilih"}
                 </div>
               </div>
 
-              {/* TOMBOL TAMBAH (+) SEPERTI DI GAMBAR */}
-              <button
+              {/* OPSI DINGIN */}
+              <div
+                onClick={() => setVarianTerpilih("Dingin")}
                 style={{
-                  background: "#12A150", // Hijau terang sesuai mockup aplikasi
+                  background: "#6cb9e9ff",
+                  color: "white",
+                  borderRadius: "12px",
+                  padding: "20px 10px",
+                  textAlign: "center",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  border: varianTerpilih === "Dingin" ? "4px solid #6cb9e9ff" : "4px solid transparent",
+                  boxShadow: varianTerpilih === "Dingin" ? "0 4px 12px rgba(28, 150, 236, 0.5)" : "none",
+                }}
+              >
+                <div style={{ fontSize: "28px", marginBottom: "8px" }}>❄️</div>
+                <div style={{ fontWeight: "700", fontSize: "14px" }}>Dingin (Cold)</div>
+                <div
+                  style={{
+                    background: "rgba(255,255,255,0.3)",
+                    borderRadius: "6px",
+                    padding: "3px 0",
+                    fontSize: "12px",
+                    marginTop: "10px",
+                    fontWeight: "600",
+                  }}
+                >
+                  {varianTerpilih === "Dingin" ? "Terpilih" : "Pilih"}
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-label informasi */}
+            <p style={{ textAlign: "center", fontSize: "12px", color: "#666", margin: "10px 0 20px" }}>
+              Pilih opsi untuk item {selectedItemMinuman.nama_menu}
+            </p>
+
+            {/* Tombol Footer */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                onClick={() => setShowVarianModal(false)}
+                style={{
+                  background: "#F3F4F6",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "8px 16px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  color: "#4B5563",
+                }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSimpanVarianMinuman}
+                style={{
+                  background: "#4A2E2B",
                   color: "white",
                   border: "none",
                   borderRadius: "6px",
-                  width: "26px",
-                  height: "26px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "16px",
-                  fontWeight: "bold",
+                  padding: "8px 20px",
+                  fontWeight: "600",
                   cursor: "pointer",
-                  flexShrink: 0,
                 }}
               >
-                +
+                Selesai
               </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,563 +1,375 @@
 import { useState, useEffect } from "react";
 import { Plus, Minus, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../database/supabase";
 
 export default function Transaksi() {
-
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const idPesanan = 1;
-
-  const [namaPemesan, setNamaPemesan] =
-    useState("");
-
-  const [cartItems, setCartItems] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
+  const [namaPemesan, setNamaPemesan] = useState("");
+  const [cartItems, setCartItems] = useState([]);
 
   const biayaLayanan = 20000;
 
+  // AMBIL DATA DARI HALAMAN MENU
   useEffect(() => {
+    if (location.state?.cart) {
+      setCartItems(location.state.cart);
+    }
+  }, [location.state]);
 
-    fetchPesanan();
+  // TAMBAH JUMLAH
+  function tambahJumlah(id) {
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+            ...item,
+            jumlah: item.jumlah + 1,
+          }
+          : item
+      )
+    );
+  }
 
-  }, []);
+  // KURANG JUMLAH
+  function kurangJumlah(id) {
+    setCartItems((prev) =>
+      prev
+        .map((item) =>
+          item.id === id
+            ? {
+              ...item,
+              jumlah: item.jumlah - 1,
+            }
+            : item
+        )
+        .filter((item) => item.jumlah > 0)
+    );
+  }
 
-  async function fetchPesanan() {
+  // HAPUS ITEM
+  function hapusItem(id) {
+    setCartItems((prev) =>
+      prev.filter((item) => item.id !== id)
+    );
+  }
 
+  // HITUNG SUBTOTAL
+  const subtotal = cartItems.reduce(
+    (acc, item) => acc + item.harga * item.jumlah,
+    0
+  );
+
+  // HITUNG TOTAL
+  const total = subtotal + biayaLayanan;
+
+  // FORMAT RUPIAH
+  function formatRupiah(angka) {
+    return "Rp " + Number(angka).toLocaleString("id-ID");
+  }
+
+  // SIMPAN PESANAN
+  async function simpanPesanan() {
     try {
 
-      setLoading(true);
-
-      const { data: pesananData } =
-        await supabase
-          .from("Pesanan")
-          .select("*")
-          .eq("id", idPesanan)
-          .single();
-
-      if (pesananData) {
-
-        setNamaPemesan(
-          pesananData.nama_pemesan || ""
-        );
-
+      // VALIDASI
+      if (!namaPemesan) {
+        alert("Nama pemesan wajib diisi");
+        return;
       }
 
-      const { data, error } =
+      if (cartItems.length === 0) {
+        alert("Keranjang kosong");
+        return;
+      }
+
+      // =====================================
+      // INSERT PESANAN
+      // =====================================
+      const { data: pesananBaru, error: errorPesanan } =
         await supabase
-          .from("Detail_Pesanan")
-          .select(`
-          id,
-          jumlah,
-          subtotal,
-          Menu(
-            id,
-            nama_menu,
-            gambar,
-            harga
-          )
-        `)
-          .eq(
-            "id_pesanan",
-            idPesanan
-          );
+          .from("Pesanan")
+          .insert([
+            {
+              id_pengguna: 1,
+              tanggal: new Date().toISOString(),
+              total_harga: total,
+            },
+          ])
+          .select()
+          .single();
 
-      if (error) throw error;
+      if (errorPesanan) {
+        console.log("ERROR PESANAN:", errorPesanan);
+        alert("Gagal menyimpan pesanan");
+        return;
+      }
 
-      const hasil =
-        data.map((item) => ({
+      // =====================================
+      // INSERT DETAIL PESANAN
+      // =====================================
+      const detailPesanan = cartItems.map((item) => ({
+        id_pesanan: pesananBaru.id,
+        id_menu: item.id,
+        jumlah: item.jumlah,
+        subtotal: item.harga * item.jumlah,
+      }));
 
-          id:
-            item.id,
+      const { error: errorDetail } = await supabase
+        .from("Detail_Pesanan")
+        .insert(detailPesanan);
 
-          nama:
-            item.Menu.nama_menu,
+      if (errorDetail) {
+        console.log("ERROR DETAIL:", errorDetail);
+        alert("Gagal menyimpan detail pesanan");
+        return;
+      }
 
-          harga:
-            item.Menu.harga,
+      // =====================================
+      // BUAT NOMOR PESANAN BERURUT
+      // =====================================
+      const { data: riwayatTerakhir, error: errorNomor } =
+        await supabase
+          .from("Riwayat")
+          .select("no_pesanan")
+          .order("no_pesanan", { ascending: false })
+          .limit(1);
 
-          jumlah:
-            item.jumlah,
+      if (errorNomor) {
+        console.log("ERROR NOMOR:", errorNomor);
+        alert("Gagal membuat nomor pesanan");
+        return;
+      }
 
-          image:
-            item.Menu.gambar
+      let nomorUrut = 1;
 
-        }));
+      if (
+        riwayatTerakhir &&
+        riwayatTerakhir.length > 0
+      ) {
 
-      setCartItems(hasil);
-
-    }
-
-    catch (err) {
-
-      console.error(err);
-
-    }
-
-    finally {
-
-      setLoading(false);
-
-    }
-
-  }
-
-  async function tambahJumlah(id) {
-
-    const item =
-      cartItems.find(
-        x => x.id === id
-      );
-
-    if (!item) return;
-
-    const jumlahBaru =
-      item.jumlah + 1;
-
-    await supabase
-      .from("Detail_Pesanan")
-      .update({
-
-        jumlah:
-          jumlahBaru,
-
-        subtotal:
-          jumlahBaru *
-          item.harga
-
-      })
-      .eq("id", id);
-
-    fetchPesanan();
-
-  }
-
-  async function kurangJumlah(id) {
-
-    const item =
-      cartItems.find(
-        x => x.id === id
-      );
-
-    if (
-      !item ||
-      item.jumlah <= 1
-    ) return;
-
-    const jumlahBaru =
-      item.jumlah - 1;
-
-    await supabase
-      .from("Detail_Pesanan")
-      .update({
-
-        jumlah:
-          jumlahBaru,
-
-        subtotal:
-          jumlahBaru *
-          item.harga
-
-      })
-      .eq("id", id);
-
-    fetchPesanan();
-
-  }
-
-  async function hapusItem(id) {
-
-    await supabase
-      .from("Detail_Pesanan")
-      .delete()
-      .eq("id", id);
-
-    fetchPesanan();
-
-  }
-
-  const subtotal =
-    cartItems.reduce(
-
-      (acc, item) =>
-
-        acc +
-        (
-          item.harga *
-          item.jumlah
-        ),
-
-      0
-
-    );
-
-  const total =
-    subtotal +
-    biayaLayanan;
-
-  function formatRupiah(
-    angka
-  ) {
-
-    return "Rp " +
-
-      Number(angka)
-        .toLocaleString(
-          "id-ID"
+        // AMBIL ANGKA DARI P0001
+        const nomorLama = parseInt(
+          riwayatTerakhir[0].no_pesanan.replace("P", "")
         );
 
-  }
+        nomorUrut = nomorLama + 1;
+      }
 
-  async function simpanPesanan() {
+      // FORMAT NOMOR PESANAN
+      const noPesanan = `P${String(
+        nomorUrut
+      ).padStart(4, "0")}`;
 
-    try {
-
-      await supabase
-        .from("Pesanan")
-        .update({
-
-          nama_pemesan:
-            namaPemesan,
-
-          total_harga:
-            total
-
-        })
-        .eq(
-          "id",
-          idPesanan
-        );
-
-      await supabase
+      // =====================================
+      // INSERT RIWAYAT
+      // =====================================
+      const { error: errorRiwayat } = await supabase
         .from("Riwayat")
-        .insert({
+        .insert([
+          {
+            id_pesanan: pesananBaru.id,
+            no_pesanan: noPesanan,
+            nama_pemesan: namaPemesan,
+            total_harga: total,
+          },
+        ]);
 
-          id_pesanan:
-            idPesanan,
+      if (errorRiwayat) {
+        console.log("ERROR RIWAYAT:", errorRiwayat);
+        alert("Gagal menyimpan riwayat");
+        return;
+      }
 
-          no_pesanan:
-            `P${String(
-              idPesanan
-            ).padStart(
-              4,
-              "0"
-            )}`,
+      // =====================================
+      // BERHASIL
+      // =====================================
+      alert("Pesanan berhasil disimpan!");
 
-          nama_pemesan:
-            namaPemesan,
+      navigate("/dashboard/riwayat");
 
-          total_harga:
-            total
-
-        });
-
-      alert(
-        "Pesanan berhasil disimpan!"
-      );
-
-      navigate(
-        "/riwayat"
-      );
-
+    } catch (err) {
+      console.log("ERROR FINAL:", err);
+      alert("Gagal menyimpan pesanan");
     }
-
-    catch (err) {
-
-      console.error(err);
-
-      alert(
-        "Gagal menyimpan."
-      );
-
-    }
-
-  }
-
-  if (loading) {
-
-    return (
-
-      <div className="p-10">
-
-        Loading...
-
-      </div>
-
-    );
-
   }
 
   return (
-
     <div className="min-h-screen bg-[#f4ece1] p-4 md:p-6 text-[#36211d]">
-
       <div className="mb-6 border-b border-[#dac2b1] pb-4">
-
         <h1 className="font-serif text-2xl md:text-3xl font-bold uppercase">
-
           Keranjang Belanja - Edit Pesanan
-
         </h1>
-
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         <div className="lg:col-span-2 flex flex-col bg-[#fdfbf7] rounded-xl border border-[#dac2b1] shadow-sm overflow-hidden">
-
           <div className="bg-[#dac2b1]/40 px-4 py-3">
-
             <h2 className="font-semibold text-lg">
-
               Detail Pesanan
-
             </h2>
-
           </div>
 
           <div className="p-6">
-
             <div className="mb-6 flex justify-between gap-4">
-
               <div>
-
-                <span className="text-xs">
-
-                  ID Pesanan
-
-                </span>
+                <span className="text-xs">Pesanan</span>
 
                 <h3 className="text-3xl font-black">
-
-                  P0001
-
+                  Keranjang
                 </h3>
-
               </div>
 
               <div className="flex-1 max-w-sm">
-
                 <input
                   type="text"
-                  value={
-                    namaPemesan
-                  }
+                  value={namaPemesan}
                   onChange={(e) =>
-                    setNamaPemesan(
-                      e.target.value
-                    )
+                    setNamaPemesan(e.target.value)
                   }
                   placeholder="Nama Pemesan"
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full border border-[#dac2b1] rounded-lg px-3 py-2 bg-white text-[#36211d] outline-none"
                 />
-
               </div>
-
             </div>
 
-            <div className="divide-y">
-
-              {cartItems.map((item) => (
-
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between py-4"
-                >
-
-                  <div className="flex items-center gap-4">
-
-                    <img
-                      src={
-                        item.image
-                      }
-                      alt={
-                        item.nama
-                      }
-                      className="w-16 h-16 rounded-lg object-cover"
-                    />
-
-                    <div>
-
-                      <h4 className="font-bold">
-
-                        {item.nama}
-
-                      </h4>
-
-                      <p>
-
-                        {
-                          formatRupiah(
-                            item.harga
-                          )
+            <div className="divide-y divide-[#dac2b1]/40">
+              {cartItems.length === 0 ? (
+                <div className="text-center py-10 text-gray-400">
+                  Keranjang belanja kosong.
+                </div>
+              ) : (
+                cartItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between py-4"
+                  >
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={
+                          item.gambar ||
+                          "https://via.placeholder.com/150?text=No+Image"
                         }
+                        alt={item.nama_menu}
+                        className="w-16 h-16 rounded-lg object-cover border border-[#dac2b1]"
+                      />
 
-                      </p>
+                      <div>
+                        <h4 className="font-bold">
+                          {item.nama_menu}
+                        </h4>
 
+                        <p className="text-sm text-gray-500">
+                          {formatRupiah(item.harga)}
+                        </p>
+                      </div>
                     </div>
 
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center border border-[#dac2b1] rounded-lg bg-white overflow-hidden">
+                        <button
+                          onClick={() =>
+                            kurangJumlah(item.id)
+                          }
+                          className="px-3 py-1 hover:bg-gray-100 transition-colors"
+                        >
+                          <Minus size={14} />
+                        </button>
+
+                        <span className="px-3 font-semibold text-sm">
+                          {item.jumlah}
+                        </span>
+
+                        <button
+                          onClick={() =>
+                            tambahJumlah(item.id)
+                          }
+                          className="px-3 py-1 hover:bg-gray-100 transition-colors"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() =>
+                          hapusItem(item.id)
+                        }
+                        className="text-red-600 p-1 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-4">
-
-                    <button
-                      onClick={() =>
-                        kurangJumlah(
-                          item.id
-                        )
-                      }
-                    >
-
-                      <Minus />
-
-                    </button>
-
-                    <span>
-
-                      {
-                        item.jumlah
-                      }
-
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        tambahJumlah(
-                          item.id
-                        )
-                      }
-                    >
-
-                      <Plus />
-
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        hapusItem(
-                          item.id
-                        )
-                      }
-                    >
-
-                      <X />
-
-                    </button>
-
-                  </div>
-
-                </div>
-
-              ))}
-
+                ))
+              )}
             </div>
-
           </div>
-
         </div>
 
         <div>
+          <div className="bg-white rounded-xl border border-[#dac2b1] p-5 shadow-sm">
+            <div className="flex justify-between text-sm">
+              <span>Subtotal</span>
 
-          <div className="bg-white rounded-xl border p-5">
-
-            <div className="flex justify-between">
-
-              <span>
-
-                Subtotal
-
+              <span className="font-semibold">
+                {formatRupiah(subtotal)}
               </span>
-
-              <span>
-
-                {
-                  formatRupiah(
-                    subtotal
-                  )
-                }
-
-              </span>
-
             </div>
 
-            <div className="flex justify-between mt-3">
+            <div className="flex justify-between mt-3 text-sm">
+              <span>Biaya Layanan</span>
 
-              <span>
-
-                Biaya Layanan
-
+              <span className="font-semibold">
+                {formatRupiah(biayaLayanan)}
               </span>
-
-              <span>
-
-                {
-                  formatRupiah(
-                    biayaLayanan
-                  )
-                }
-
-              </span>
-
             </div>
 
-            <div className="flex justify-between mt-5 text-xl font-bold">
+            <div className="border-t border-[#dac2b1] my-4"></div>
 
-              <span>
+            <div className="flex justify-between text-xl font-bold">
+              <span>Total</span>
 
-                Total
-
+              <span className="text-[#1e6f43]">
+                {formatRupiah(total)}
               </span>
-
-              <span>
-
-                {
-                  formatRupiah(
-                    total
-                  )
-                }
-
-              </span>
-
             </div>
-
           </div>
 
           <div className="mt-5 flex flex-col gap-3">
-
             <button
-              onClick={
-                simpanPesanan
-              }
-              className="w-full bg-[#1e6f43] text-white py-3 rounded-xl font-bold"
+              onClick={simpanPesanan}
+              disabled={cartItems.length === 0}
+              className="w-full bg-[#1e6f43] hover:bg-[#175634] text-white py-3 rounded-xl font-bold transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-
               Simpan & Konfirmasi Pesanan
-
             </button>
 
             <button
               onClick={() =>
-                fetchPesanan()
+                navigate("/dashboard/menu", {
+                  state: {
+                    pesanan: Object.fromEntries(
+                      cartItems.map((item) => [
+                        item.id,
+                        {
+                          jumlah: item.jumlah,
+                          varian: item.varian,
+                          harga_terpilih: item.harga,
+                        },
+                      ])
+                    ),
+                  },
+                })
               }
-              className="w-full border border-red-700 text-red-700 py-3 rounded-xl font-bold"
+              className="w-full border border-red-700 text-red-700 hover:bg-red-50 py-3 rounded-xl font-bold transition-colors"
             >
-
-              Batalkan Edit
-
+              Kembali Ke Menu
             </button>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }
