@@ -21,17 +21,16 @@ export default function TambahMenu() {
     try {
       let imageUrl = null;
 
-      // =========================
-      // UPLOAD GAMBAR OPTIONAL
-      // =========================
+      // UPLOAD GAMBAR
       if (gambar) {
         const fileExt = gambar.name.split(".").pop();
 
         const fileName = `${Date.now()}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from("menu-gambar")
-          .upload(fileName, gambar);
+        const { error: uploadError } =
+          await supabase.storage
+            .from("menu-gambar")
+            .upload(fileName, gambar);
 
         if (uploadError) {
           console.log(uploadError);
@@ -48,34 +47,33 @@ export default function TambahMenu() {
         imageUrl = publicUrl;
       }
 
-      // =========================
       // INSERT DATABASE
-      // =========================
-      const { error } = await supabase.from("Menu").insert([
-        {
-          nama_menu: namaMenu,
+      const { error } = await supabase
+        .from("Menu")
+        .insert([
+          {
+            nama_menu: namaMenu,
 
-          // SESUAI DATABASE KAMU
-          Id_kategori: Number(kategori),
+            Id_kategori: Number(kategori),
 
-          harga_makanan:
-            kategori === "1"
-              ? Number(hargaMakanan)
-              : null,
+            harga_makanan:
+              kategori === "1"
+                ? Number(hargaMakanan)
+                : null,
 
-          harga_dingin:
-            kategori === "2"
-              ? Number(hargaDingin)
-              : null,
+            harga_dingin:
+              kategori === "2"
+                ? Number(hargaDingin)
+                : null,
 
-          harga_panas:
-            kategori === "2"
-              ? Number(hargaPanas)
-              : null,
+            harga_panas:
+              kategori === "2"
+                ? Number(hargaPanas)
+                : null,
 
-          gambar: imageUrl,
-        },
-      ]);
+            gambar: imageUrl,
+          },
+        ]);
 
       if (error) {
         console.log(error);
@@ -93,126 +91,323 @@ export default function TambahMenu() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-5 overflow-y-auto">
-      <div className="bg-[#F6F1EB] w-full max-w-6xl rounded-3xl p-10 relative">
+    <div
+      className="
+        fixed
+        inset-0
+        bg-black/40
+        flex
+        justify-center
+        items-center
+        z-50
+        p-4
+      "
+    >
+      {/* MODAL */}
+      <div
+        className="
+          bg-white
+          w-full
+          max-w-[650px]
+          rounded-md
+          relative
+          shadow-xl
+          px-10
+          py-8
+        "
+      >
         {/* CLOSE */}
         <button
-          onClick={() => navigate("/dashboard/menu")}
-          className="absolute top-6 right-6"
+          onClick={() =>
+            navigate("/dashboard/menu")
+          }
+          className="absolute top-4 right-4"
         >
-          <X size={30} />
+          <X size={20} />
         </button>
 
         {/* TITLE */}
-        <h1 className="text-5xl font-bold text-center text-[#4B2E2B] mb-14">
+        <h1
+          className="
+            text-center
+            text-[34px]
+            font-bold
+            text-[#4B2E2B]
+            mb-10
+          "
+        >
           Tambah Menu
         </h1>
 
+        {/* FORM */}
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14">
-            {/* LEFT */}
-            <div className="space-y-8">
-              {/* NAMA MENU */}
-              <div>
-                <label className="block text-2xl font-semibold mb-3">
-                  Nama Menu
-                </label>
+          <div className="space-y-5">
 
-                <input
-                  type="text"
-                  value={namaMenu}
-                  onChange={(e) => setNamaMenu(e.target.value)}
-                  required
-                  className="w-full border-2 border-[#4B2E2B] rounded-2xl px-5 py-4 text-xl bg-white"
-                />
-              </div>
+            {/* NAMA MENU */}
+            <div className="grid grid-cols-[150px_1fr] items-center gap-5">
+              <label
+                className="
+                  text-[17px]
+                  font-semibold
+                  text-[#4B2E2B]
+                "
+              >
+                Nama Menu
+              </label>
 
-              {/* KATEGORI */}
-              <div>
-                <label className="block text-2xl font-semibold mb-3">
-                  Kategori
-                </label>
+              <input
+                type="text"
+                value={namaMenu}
+                onChange={(e) =>
+                  setNamaMenu(e.target.value)
+                }
+                required
+                className="
+                  border
+                  border-gray-300
+                  h-[38px]
+                  px-3
+                  outline-none
+                  text-sm
+                "
+              />
+            </div>
 
-                <select
-                  value={kategori}
-                  onChange={(e) => setKategori(e.target.value)}
-                  className="w-full border-2 border-[#4B2E2B] rounded-2xl px-5 py-4 text-xl bg-white"
+            {/* KATEGORI */}
+            <div className="grid grid-cols-[150px_1fr] gap-5">
+              <label
+                className="
+                  text-[17px]
+                  font-semibold
+                  text-[#4B2E2B]
+                  pt-2
+                "
+              >
+                Kategori
+              </label>
+
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setKategori("1")
+                  }
+                  className={`
+                    w-full
+                    border
+                    text-left
+                    px-3
+                    h-[38px]
+                    text-sm
+                    ${kategori === "1"
+                      ? "bg-[#F3ECE5] border-[#4B2E2B]"
+                      : "border-gray-300"
+                    }
+                  `}
                 >
-                  <option value="1">Makanan</option>
-                  <option value="2">Minuman</option>
-                </select>
-              </div>
+                  Makanan
+                </button>
 
-              {/* HARGA MAKANAN */}
-              {kategori === "1" && (
-                <div>
-                  <label className="block text-2xl font-semibold mb-3">
-                    Harga Makanan
-                  </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setKategori("2")
+                  }
+                  className={`
+                    w-full
+                    border
+                    text-left
+                    px-3
+                    h-[38px]
+                    text-sm
+                    ${kategori === "2"
+                      ? "bg-[#F3ECE5] border-[#4B2E2B]"
+                      : "border-gray-300"
+                    }
+                  `}
+                >
+                  Minuman
+                </button>
+              </div>
+            </div>
+
+            {/* HARGA MAKANAN */}
+            {kategori === "1" && (
+              <div className="grid grid-cols-[150px_1fr] items-center gap-5">
+                <label
+                  className="
+                    text-[17px]
+                    font-semibold
+                    text-[#4B2E2B]
+                  "
+                >
+                  Harga Makanan
+                </label>
+
+                <div className="relative">
+                  <span
+                    className="
+                      absolute
+                      left-3
+                      top-1/2
+                      -translate-y-1/2
+                      text-sm
+                    "
+                  >
+                    Rp
+                  </span>
 
                   <input
                     type="number"
                     value={hargaMakanan}
                     onChange={(e) =>
-                      setHargaMakanan(e.target.value)
+                      setHargaMakanan(
+                        e.target.value
+                      )
                     }
                     required
-                    className="w-full border-2 border-[#4B2E2B] rounded-2xl px-5 py-4 text-xl bg-white"
+                    className="
+                      border
+                      border-gray-300
+                      h-[38px]
+                      w-full
+                      pl-10
+                      pr-3
+                      outline-none
+                      text-sm
+                    "
                   />
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* HARGA MINUMAN */}
-              {kategori === "2" && (
-                <>
-                  <div>
-                    <label className="block text-2xl font-semibold mb-3">
-                      Harga Dingin
-                    </label>
-
-                    <input
-                      type="number"
-                      value={hargaDingin}
-                      onChange={(e) =>
-                        setHargaDingin(e.target.value)
-                      }
-                      required
-                      className="w-full border-2 border-[#4B2E2B] rounded-2xl px-5 py-4 text-xl bg-white"
-                    />
-                  </div>
+            {/* HARGA MINUMAN */}
+            {kategori === "2" && (
+              <>
+                {/* PANAS */}
+                <div className="grid grid-cols-[150px_1fr] gap-5">
+                  <label
+                    className="
+                      text-[17px]
+                      font-semibold
+                      text-[#4B2E2B]
+                      pt-2
+                    "
+                  >
+                    Harga Minuman
+                  </label>
 
                   <div>
-                    <label className="block text-2xl font-semibold mb-3">
-                      Harga Panas
-                    </label>
+                    <p className="text-sm mb-1">
+                      Panas
+                    </p>
 
-                    <input
-                      type="number"
-                      value={hargaPanas}
-                      onChange={(e) =>
-                        setHargaPanas(e.target.value)
-                      }
-                      required
-                      className="w-full border-2 border-[#4B2E2B] rounded-2xl px-5 py-4 text-xl bg-white"
-                    />
+                    <div className="relative">
+                      <span
+                        className="
+                          absolute
+                          left-3
+                          top-1/2
+                          -translate-y-1/2
+                          text-sm
+                        "
+                      >
+                        Rp
+                      </span>
+
+                      <input
+                        type="number"
+                        value={hargaPanas}
+                        onChange={(e) =>
+                          setHargaPanas(
+                            e.target.value
+                          )
+                        }
+                        required
+                        className="
+                          border
+                          border-gray-300
+                          h-[38px]
+                          w-full
+                          pl-10
+                          pr-3
+                          outline-none
+                          text-sm
+                        "
+                      />
+                    </div>
+
+                    {/* DINGIN */}
+                    <p className="text-sm mt-3 mb-1">
+                      Dingin
+                    </p>
+
+                    <div className="relative">
+                      <span
+                        className="
+                          absolute
+                          left-3
+                          top-1/2
+                          -translate-y-1/2
+                          text-sm
+                        "
+                      >
+                        Rp
+                      </span>
+
+                      <input
+                        type="number"
+                        value={hargaDingin}
+                        onChange={(e) =>
+                          setHargaDingin(
+                            e.target.value
+                          )
+                        }
+                        required
+                        className="
+                          border
+                          border-gray-300
+                          h-[38px]
+                          w-full
+                          pl-10
+                          pr-3
+                          outline-none
+                          text-sm
+                        "
+                      />
+                    </div>
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
 
-            {/* RIGHT */}
-            <div>
-              <label className="block text-2xl font-semibold mb-3">
-                Gambar
-              </label>
+            {/* GAMBAR */}
+            <div className="grid grid-cols-[150px_1fr] gap-5 pt-2">
+              <div></div>
 
-              <label className="border-2 border-dashed border-[#4B2E2B] rounded-3xl h-[420px] flex flex-col items-center justify-center cursor-pointer bg-white overflow-hidden">
+              <label
+                className="
+                  border
+                  border-gray-300
+                  bg-[#D9D9D9]
+                  h-[120px]
+                  flex
+                  flex-col
+                  justify-center
+                  items-center
+                  text-center
+                  cursor-pointer
+                  overflow-hidden
+                "
+              >
                 <input
                   type="file"
                   hidden
                   accept="image/*"
                   onChange={(e) =>
-                    setGambar(e.target.files[0])
+                    setGambar(
+                      e.target.files[0]
+                    )
                   }
                 />
 
@@ -220,40 +415,69 @@ export default function TambahMenu() {
                   <img
                     src={URL.createObjectURL(gambar)}
                     alt="preview"
-                    className="w-full h-full object-cover"
+                    className="
+                      w-full
+                      h-full
+                      object-cover
+                    "
                   />
                 ) : (
                   <>
-                    <p className="text-4xl font-semibold text-center text-[#4B2E2B]">
+                    <p
+                      className="
+                        text-sm
+                        font-semibold
+                        text-[#4B2E2B]
+                      "
+                    >
                       Klik untuk upload gambar
                     </p>
 
-                    <p className="mt-4 text-xl text-gray-500">
-                      JPG / PNG maksimal 2MB
-                    </p>
-
-                    <p className="mt-3 text-lg text-gray-400">
-                      Gambar tidak wajib
+                    <p className="text-[11px] text-gray-600 mt-1">
+                      Format JPG, PNG (Maks 2MB)
                     </p>
                   </>
                 )}
               </label>
             </div>
+
           </div>
 
           {/* BUTTON */}
-          <div className="flex justify-end gap-5 mt-14">
+          <div
+            className="
+              flex
+              justify-end
+              gap-3
+              mt-8
+            "
+          >
             <button
               type="button"
-              onClick={() => navigate("/dashboard/menu")}
-              className="border-2 border-[#4B2E2B] px-10 py-4 rounded-2xl text-xl"
+              onClick={() =>
+                navigate("/dashboard/menu")
+              }
+              className="
+                border
+                border-gray-400
+                px-5
+                py-2
+                text-sm
+                bg-white
+              "
             >
               Batal
             </button>
 
             <button
               type="submit"
-              className="bg-[#4B2E2B] text-white px-10 py-4 rounded-2xl text-xl"
+              className="
+                bg-[#4B2E2B]
+                text-white
+                px-5
+                py-2
+                text-sm
+              "
             >
               Simpan
             </button>
