@@ -57,6 +57,7 @@ export default function Menu() {
       alert("Gagal menghapus menu");
       console.log(error);
     } else {
+      setOpenMenuId(null); // Tutup dropdown setelah hapus
       getMenu();
     }
   }
@@ -182,7 +183,7 @@ export default function Menu() {
               alignItems: "center",
               gap: "8px",
               minWidth: "120px",
-              justifyContent: "space-between",
+              justify: "space-between",
             }}
           >
             {kategori === "Semua" ? "Kategori" : kategori}
@@ -293,10 +294,12 @@ export default function Menu() {
                     minWidth: "110px",
                   }}
                 >
+                  {/* TOMBOL UBAH MENU DIKONDISIKAN MENGGUNAKAN URL PARAMETER */}
                   <div
-                    onClick={() =>
-                      navigate(`/dashboard/edit-menu/${item.id}`)
-                    }
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      navigate(`/dashboard/ubah-menu/${item.id}`);
+                    }}
                     style={{
                       padding: "8px 12px",
                       cursor: "pointer",
@@ -305,6 +308,7 @@ export default function Menu() {
                       gap: "8px",
                       fontSize: "13px",
                       borderBottom: "1px solid #eee",
+                      color: "#333",
                     }}
                   >
                     <Pencil size={12} />
