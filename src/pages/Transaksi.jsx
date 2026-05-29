@@ -128,6 +128,38 @@ export default function Transaksi() {
       }
 
       // =====================================
+      // KURANGI STOK SETELAH TRANSAKSI
+      // =====================================
+      for (const item of cartItems) {
+
+        console.log("ITEM CART:", item);
+
+        const { data: stokLama, error: errorGet } = await supabase
+          .from("Stok")
+          .select("jumlah")
+          .eq("nama_menu", item.nama_menu)
+          .single();
+
+        if (errorGet) {
+          console.log("ERROR AMBIL STOK:", errorGet);
+          continue;
+        }
+
+        const stokBaru = (stokLama.jumlah || 0) - item.jumlah;
+
+        const { error: errorUpdate } = await supabase
+          .from("Stok")
+          .update({
+            jumlah: stokBaru < 0 ? 0 : stokBaru
+          })
+          .eq("nama_menu", item.nama_menu);
+
+        if (errorUpdate) {
+          console.log("ERROR UPDATE STOK:", errorUpdate);
+        }
+      }
+
+      // =====================================
       // BUAT NOMOR PESANAN BERURUT
       // =====================================
       const { data: riwayatTerakhir, error: errorNomor } =
@@ -174,8 +206,11 @@ export default function Transaksi() {
             no_pesanan: noPesanan,
             nama_pemesan: namaPemesan,
             total_harga: total,
+            tanggal: new Date().toLocaleString("sv-SE", {
+              timeZone: "Asia/Makassar"
+            }),
           },
-        ]);
+        ])
 
       if (errorRiwayat) {
         console.log("ERROR RIWAYAT:", errorRiwayat);

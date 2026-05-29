@@ -45,16 +45,52 @@ export default function Menu() {
   }, []);
 
   async function getMenu() {
-    const { data, error } = await supabase
-      .from("Menu")
-      .select("*")
-      .order("id", { ascending: false });
 
-    if (error) {
-      console.log("ERROR:", error);
-    } else {
-      setMenuData(data);
+    // AMBIL DATA MENU
+    const { data: menuData, error: menuError } =
+      await supabase
+        .from("Menu")
+        .select("*")
+        .order("id", { ascending: false });
+
+    if (menuError) {
+      console.log("MENU ERROR:", menuError);
+      return;
     }
+
+    // AMBIL DATA STOK
+    const { data: stokData, error: stokError } =
+      await supabase
+        .from("Stok")
+        .select("*");
+
+    if (stokError) {
+      console.log("STOK ERROR:", stokError);
+      return;
+    }
+
+    // GABUNGKAN MENU + STOK
+    const gabungData = menuData.map((menu) => {
+
+      // CARI STOK BERDASARKAN NAMA MENU
+      const stokItem = stokData.find(
+        (stok) =>
+          stok.nama_menu === menu.nama_menu
+      );
+
+      return {
+        ...menu,
+
+        // JIKA TIDAK ADA STOK
+        stok: stokItem
+          ? Number(stokItem.jumlah)
+          : 0,
+      };
+
+    });
+
+    setMenuData(gabungData);
+
   }
 
   // HAPUS MENU
@@ -373,7 +409,7 @@ export default function Menu() {
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fill, minmax(180px, 1fr))",
+            "repeat(auto-fill, minmax(230px, 1fr))",
           gap: "20px",
         }}
       >
@@ -381,24 +417,22 @@ export default function Menu() {
           const jumlahItem =
             pesanan[item.id]?.jumlah || 0;
 
-          const isStokHabis =
-            item.stok === false ||
-            item.stok <= 0;
+          const isStokHabis = item.stok <= 0;
 
           return (
             <div
               key={item.id}
               style={{
-                background: "white",
-                borderRadius: "12px",
-                padding: "8px",
+                background: "#F8F3EE",
+                borderRadius: "16px",
+                padding: "12px",
                 position: "relative",
-                boxShadow:
-                  "0 2px 6px rgba(0,0,0,0.05)",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                height: "215px",
+                minHeight: "300px",
+                border: "1px solid #E6DED4",
               }}
             >
               {/* TITIK TIGA */}
@@ -420,11 +454,10 @@ export default function Menu() {
                   }
                   style={{
                     border: "none",
-                    background:
-                      "rgba(255,255,255,0.8)",
+                    background: "rgba(255,255,255,0.9)",
                     borderRadius: "50%",
-                    width: "24px",
-                    height: "24px",
+                    width: "28px",
+                    height: "28px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -432,7 +465,7 @@ export default function Menu() {
                   }}
                 >
                   <MoreVertical
-                    size={14}
+                    size={15}
                     color="#333"
                   />
                 </button>
@@ -441,7 +474,7 @@ export default function Menu() {
                   <div
                     style={{
                       position: "absolute",
-                      top: "28px",
+                      top: "32px",
                       right: 0,
                       background: "white",
                       borderRadius: "8px",
@@ -505,210 +538,165 @@ export default function Menu() {
                 alt={item.nama_menu}
                 style={{
                   width: "100%",
-                  height: "120px",
+                  height: "170px",
                   objectFit: "cover",
-                  borderRadius: "8px",
-                  marginBottom: "8px",
+                  borderRadius: "12px",
+                  marginBottom: "12px",
                 }}
               />
 
-              {/* INFO */}
-              <div
+              {/* NAMA */}
+              <h3
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "2px 4px",
+                  fontSize: "16px",
+                  fontWeight: "700",
+                  margin: "0 0 6px 0",
+                  color: "#4A2E2B",
                 }}
               >
-                <div
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    marginRight: "5px",
-                  }}
-                >
-                  <h3
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      margin: "0 0 4px 0",
-                      color: "#2B1B17",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {item.nama_menu}
-                  </h3>
+                {item.nama_menu}
+              </h3>
 
+              {/* HARGA */}
+              <div
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  color: "#555",
+                  marginBottom: "14px",
+                }}
+              >
+                {item.harga_makanan && (
+                  <p style={{ margin: 0 }}>
+                    Rp{" "}
+                    {Number(
+                      item.harga_makanan
+                    ).toLocaleString("id-ID")}
+                  </p>
+                )}
+
+                {!item.harga_makanan && (
                   <div
                     style={{
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      color: "#666",
-                      minHeight: "28px",
                       display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
+                      gap: "16px",
                     }}
                   >
-                    {item.harga_makanan && (
+                    {item.harga_panas && (
                       <p style={{ margin: 0 }}>
-                        Rp{" "}
+                        P: Rp{" "}
                         {Number(
-                          item.harga_makanan
-                        ).toLocaleString(
-                          "id-ID"
-                        )}
+                          item.harga_panas
+                        ).toLocaleString("id-ID")}
                       </p>
                     )}
 
-                    {!item.harga_makanan && (
-                      <>
-                        {item.harga_dingin && (
-                          <p
-                            style={{
-                              margin:
-                                "0 0 1px 0",
-                            }}
-                          >
-                            D : Rp{" "}
-                            {Number(
-                              item.harga_dingin
-                            ).toLocaleString(
-                              "id-ID"
-                            )}
-                          </p>
-                        )}
-
-                        {item.harga_panas && (
-                          <p style={{ margin: 0 }}>
-                            P : Rp{" "}
-                            {Number(
-                              item.harga_panas
-                            ).toLocaleString(
-                              "id-ID"
-                            )}
-                          </p>
-                        )}
-                      </>
+                    {item.harga_dingin && (
+                      <p style={{ margin: 0 }}>
+                        D: Rp{" "}
+                        {Number(
+                          item.harga_dingin
+                        ).toLocaleString("id-ID")}
+                      </p>
                     )}
                   </div>
+                )}
+              </div>
+
+              {/* BUTTON */}
+              {isStokHabis ? (
+                <div
+                  style={{
+                    width: "100%",
+                    background: "#CFCFCF",
+                    color: "white",
+                    borderRadius: "10px",
+                    padding: "10px",
+                    fontSize: "15px",
+                    fontWeight: "700",
+                    textAlign: "center",
+                    marginTop: "auto",
+                  }}
+                >
+                  Stok Habis
                 </div>
-
-                {/* BUTTON AKSI */}
-                {isStokHabis ? (
-                  <div
+              ) : jumlahItem > 0 ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "#12A150",
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    marginTop: "auto",
+                  }}
+                >
+                  <button
+                    onClick={() =>
+                      handleKurangPesanan(item.id)
+                    }
                     style={{
-                      background: "#F2EFEA",
-                      color: "#A89F91",
-                      border:
-                        "1px solid #D1C7BD",
-                      borderRadius: "6px",
-                      padding: "5px 10px",
-                      fontSize: "11px",
+                      background: "transparent",
+                      border: "none",
+                      color: "white",
+                      fontSize: "22px",
+                      width: "45px",
+                      height: "40px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    -
+                  </button>
+
+                  <span
+                    style={{
+                      color: "white",
                       fontWeight: "700",
-                      textAlign: "center",
-                      whiteSpace: "nowrap",
-                      height: "26px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxSizing: "border-box",
+                      fontSize: "16px",
                     }}
                   >
-                    Stok habis
-                  </div>
-                ) : jumlahItem > 0 ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      background: "white",
-                      borderRadius: "6px",
-                      border:
-                        "1px solid #12A150",
-                      height: "26px",
-                      boxSizing: "border-box",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <button
-                      onClick={() =>
-                        handleKurangPesanan(
-                          item.id
-                        )
-                      }
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#12A150",
-                        fontSize: "16px",
-                        fontWeight: "bold",
-                        cursor: "pointer",
-                        width: "24px",
-                        height: "100%",
-                      }}
-                    >
-                      -
-                    </button>
+                    {jumlahItem}
+                  </span>
 
-                    <span
-                      style={{
-                        fontSize: "13px",
-                        fontWeight: "bold",
-                        color: "#12A150",
-                        minWidth: "16px",
-                        textAlign: "center",
-                      }}
-                    >
-                      {jumlahItem}
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        handleTambahPesanan(item)
-                      }
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#12A150",
-                        fontSize: "16px",
-                        fontWeight: "bold",
-                        cursor: "pointer",
-                        width: "24px",
-                        height: "100%",
-                      }}
-                    >
-                      +
-                    </button>
-                  </div>
-                ) : (
                   <button
                     onClick={() =>
                       handleTambahPesanan(item)
                     }
                     style={{
-                      background: "#12A150",
-                      color: "white",
+                      background: "transparent",
                       border: "none",
-                      borderRadius: "6px",
-                      width: "26px",
-                      height: "26px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "16px",
-                      fontWeight: "bold",
+                      color: "white",
+                      fontSize: "22px",
+                      width: "45px",
+                      height: "40px",
                       cursor: "pointer",
-                      flexShrink: 0,
                     }}
                   >
                     +
                   </button>
-                )}
-              </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() =>
+                    handleTambahPesanan(item)
+                  }
+                  style={{
+                    width: "100%",
+                    background: "#12A150",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "10px",
+                    padding: "10px",
+                    fontSize: "18px",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    marginTop: "auto",
+                  }}
+                >
+                  +
+                </button>
+              )}
             </div>
           );
         })}

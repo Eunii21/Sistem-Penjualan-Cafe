@@ -13,7 +13,7 @@ import TambahStok from "./pages/TambahStok";
 import UbahStok from "./pages/UbahStok";
 import UbahSandi from "./pages/UbahSandi";
 import Riwayat from "./pages/Riwayat";
-
+import DetailRiwayat from "./pages/DetailRiwayat";
 
 function App() {
   return (
@@ -32,6 +32,7 @@ function App() {
         <Route path="tambah-stok" element={<TambahStok />} />
         <Route path="ubah-stok" element={<UbahStok />} />
         <Route path="riwayat" element={<Riwayat />} />
+        <Route path="detailriwayat" element={<DetailRiwayat />} />
       </Route>
     </Routes>
   );
