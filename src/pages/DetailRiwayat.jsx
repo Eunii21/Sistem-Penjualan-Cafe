@@ -67,10 +67,6 @@ export default function DetailRiwayat({
                             ☕ MESOMBANG CAFE
                         </h1>
 
-                        <p className="text-lg">
-                            Jl. Utama No.123
-                        </p>
-
                     </div>
 
                     <hr className="
@@ -147,6 +143,14 @@ export default function DetailRiwayat({
 
                                             <td>
                                                 {item.jumlah}
+                                            </td>
+
+                                            <td>
+                                                Rp {formatRupiah(harga)}
+                                            </td>
+
+                                            <td>
+                                                Rp {formatRupiah(item.subtotal)}
                                             </td>
 
                                         </tr>

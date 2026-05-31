@@ -14,11 +14,13 @@ import UbahStok from "./pages/UbahStok";
 import UbahSandi from "./pages/UbahSandi";
 import Riwayat from "./pages/Riwayat";
 import DetailRiwayat from "./pages/DetailRiwayat";
+import Laporan from "./pages/Laporan";
+
 
 function App() {
   return (
     <Routes>
-      <Route path="/landingpage" element={<LandingPage />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/lupasandi" element={<LupaSandi />} />
       <Route path="ubahsandi" element={<UbahSandi />} />
@@ -33,6 +35,7 @@ function App() {
         <Route path="ubah-stok" element={<UbahStok />} />
         <Route path="riwayat" element={<Riwayat />} />
         <Route path="detailriwayat" element={<DetailRiwayat />} />
+        <Route path="laporan" element={<Laporan />} />
       </Route>
     </Routes>
   );

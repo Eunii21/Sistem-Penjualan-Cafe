@@ -10,7 +10,7 @@ export default function Transaksi() {
   const [namaPemesan, setNamaPemesan] = useState("");
   const [cartItems, setCartItems] = useState([]);
 
-  const biayaLayanan = 20000;
+  const biayaLayanan = 0;
 
   // AMBIL DATA DARI HALAMAN MENU
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function Transaksi() {
   );
 
   // HITUNG TOTAL
-  const total = subtotal + biayaLayanan;
+  const total = subtotal;
 
   // FORMAT RUPIAH
   function formatRupiah(angka) {
@@ -235,7 +235,7 @@ export default function Transaksi() {
     <div className="min-h-screen bg-[#f4ece1] p-4 md:p-6 text-[#36211d]">
       <div className="mb-6 border-b border-[#dac2b1] pb-4">
         <h1 className="font-serif text-2xl md:text-3xl font-bold uppercase">
-          Keranjang Belanja - Edit Pesanan
+          TRANSAKSI
         </h1>
       </div>
 
@@ -250,7 +250,6 @@ export default function Transaksi() {
           <div className="p-6">
             <div className="mb-6 flex justify-between gap-4">
               <div>
-                <span className="text-xs">Pesanan</span>
 
                 <h3 className="text-3xl font-black">
                   Keranjang
@@ -350,14 +349,6 @@ export default function Transaksi() {
 
               <span className="font-semibold">
                 {formatRupiah(subtotal)}
-              </span>
-            </div>
-
-            <div className="flex justify-between mt-3 text-sm">
-              <span>Biaya Layanan</span>
-
-              <span className="font-semibold">
-                {formatRupiah(biayaLayanan)}
               </span>
             </div>
 

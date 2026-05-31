@@ -5,6 +5,7 @@ import {
   Coffee,
   Package,
   History,
+  FileBarChart,
   LogOut,
   ChevronLeft,
   Menu as MenuIcon,
@@ -18,10 +19,16 @@ function Sidebar({ open, setOpen }) {
   // Data menu utama kafe
   const menus = [
     { text: "Beranda", icon: <Home size={20} />, path: "/dashboard" },
+
     { text: "Transaksi", icon: <DollarSign size={20} />, path: "/dashboard/transaksi" },
+
     { text: "Menu Kafe", icon: <Coffee size={20} />, path: "/dashboard/menu" },
+
     { text: "Stok Barang", icon: <Package size={20} />, path: "/dashboard/stok" },
+
     { text: "Riwayat", icon: <History size={20} />, path: "/dashboard/riwayat" },
+
+    { text: "Laporan", icon: <FileBarChart size={20} />, path: "/dashboard/laporan" },
   ];
 
   return (

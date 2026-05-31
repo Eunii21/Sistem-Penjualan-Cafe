@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Wallet, FileText, Coffee } from "lucide-react";
 import { supabase } from "../database/supabase";
+import DetailRiwayat from "./DetailRiwayat";
 
 function Dashboard() {
 
@@ -8,10 +9,21 @@ function Dashboard() {
   const [transaksiHariIni, setTransaksiHariIni] = useState(0);
   const [menuTerlaris, setMenuTerlaris] = useState("-");
   const [topMenus, setTopMenus] = useState([]);
-  const [grafikData, setGrafikData] = useState([]);
+  const [riwayatTerbaru, setRiwayatTerbaru] = useState([]);
+  const [openDetail, setOpenDetail] = useState(false);
+  const [selectedData, setSelectedData] = useState(null);
+  const [detailMenu, setDetailMenu] = useState([]);
 
   useEffect(() => {
+
     loadDashboard();
+
+    const interval = setInterval(() => {
+      loadDashboard();
+    }, 3000);
+
+    return () => clearInterval(interval);
+
   }, []);
 
   async function loadDashboard() {
@@ -25,7 +37,7 @@ function Dashboard() {
 
       const today = new Date();
 
-      const transaksiToday = (riwayat || []).filter((item) => {
+      const riwayatHariIni = (riwayat || []).filter((item) => {
 
         if (!item.tanggal) return false;
 
@@ -38,6 +50,16 @@ function Dashboard() {
         );
 
       });
+
+      const sortedRiwayat = riwayatHariIni.sort(
+        (a, b) =>
+          new Date(b.tanggal) -
+          new Date(a.tanggal)
+      );
+
+      setRiwayatTerbaru(sortedRiwayat);
+
+      const transaksiToday = riwayatHariIni;
 
       console.log("TRANSAKSI HARI INI:", transaksiToday);
 
@@ -101,37 +123,6 @@ function Dashboard() {
 
       setTopMenus(sortedMenus);
 
-      const jamData = Array(9).fill(0);
-
-      transaksiToday.forEach((trx) => {
-
-        const jam =
-          new Date(trx.tanggal).getHours();
-
-        if (jam >= 17 && jam <= 23) {
-
-          jamData[jam - 17] +=
-            Number(trx.total_harga || 0);
-
-        }
-
-        if (jam === 0) {
-
-          jamData[7] +=
-            Number(trx.total_harga || 0);
-
-        }
-
-        if (jam === 1) {
-
-          jamData[8] +=
-            Number(trx.total_harga || 0);
-
-        }
-
-      });
-      setGrafikData(jamData);
-
     } catch (err) {
 
       console.log(err);
@@ -139,11 +130,24 @@ function Dashboard() {
     }
   }
 
-  const maxValue = 2000000;
+  async function fetchDetailMenu(idPesanan) {
 
-  const chartWidth = 750;
-  const startX = 80;
-  const stepX = chartWidth / (grafikData.length - 1);
+    const { data, error } = await supabase
+      .from("Detail_Pesanan")
+      .select(`
+        *,
+        Menu (*)
+        `)
+      .eq("id_pesanan", idPesanan);
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    setDetailMenu(data || []);
+  }
+
 
   return (
     <div className="px-4 md:px-8 py-6">
@@ -163,131 +167,113 @@ function Dashboard() {
 
       </div>
 
-      {/* CHART */}
-      <div className="bg-[#f4f1ee] rounded-2xl shadow-md p-4 md:p-6 mb-10">
-        <h3 className="mb-4 font-semibold">Grafik penjualan harian</h3>
+      {/* RIWAYAT TRANSAKSI */}
+      <div className="bg-[#f4f1ee] rounded-2xl shadow-md p-5 mb-10">
 
-        <div className="w-full h-[200px]">
-          <svg viewBox="0 0 900 250" className="w-full h-full">
+        <h3 className="font-semibold mb-4">
+          Riwayat Transaksi Terbaru
+        </h3>
 
-            <line
-              x1="50"
-              y1="200"
-              x2="850"
-              y2="200"
-              stroke="#ccc"
-            />
+        <div className="overflow-y-auto max-h-[300px]">
 
-            <line
-              x1="50"
-              y1="20"
-              x2="50"
-              y2="200"
-              stroke="#ccc"
-            />
+          <table className="w-full">
 
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => {
+            <thead>
 
-              const value = 2000000 - (i * 250000);
+              <tr className="border-b">
 
-              const y = 20 + (i * 22.5);
+                <th className="text-left py-3">
+                  No Pesanan
+                </th>
 
-              return (
-                <g key={i}>
+                <th className="text-left py-3">
+                  Nama Pemesan
+                </th>
 
-                  <line
-                    x1="50"
-                    y1={y}
-                    x2="650"
-                    y2={y}
-                    stroke="#e5e5e5"
-                  />
+                <th className="text-left py-3">
+                  Total
+                </th>
 
-                  <text
-                    x="45"
-                    y={y + 4}
-                    textAnchor="end"
-                    fontSize="10"
-                    fill="#666"
+                <th className="text-left py-3">
+                  Tanggal
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {riwayatTerbaru.length > 0 ? (
+
+                riwayatTerbaru.map((item) => (
+
+                  <tr
+                    key={item.id}
+                    className="
+                        border-b
+                        cursor-pointer
+                        hover:bg-gray-100
+                    "
+                    onClick={async () => {
+
+                      setSelectedData(item);
+
+                      await fetchDetailMenu(
+                        item.id_pesanan
+                      );
+
+                      setOpenDetail(true);
+
+                    }}
                   >
-                    Rp {value.toLocaleString("id-ID")}
-                  </text>
 
-                </g>
-              );
+                    <td className="py-3">
+                      {item.no_pesanan}
+                    </td>
 
-            })}
+                    <td className="py-3">
+                      {item.nama_pemesan}
+                    </td>
 
-            <polyline
-              fill="none"
-              stroke="#5c3a32"
-              strokeWidth="4"
-              points={
-                grafikData.length
-                  ? grafikData
-                    .map((v, i) => {
-                      const x = startX + i * stepX;
-                      const y =
-                        200 -
-                        (v / maxValue) * 180;
+                    <td className="py-3">
+                      Rp {Number(
+                        item.total_harga || 0
+                      ).toLocaleString("id-ID")}
+                    </td>
 
-                      return `${x},${y}`;
-                    })
-                    .join(" ")
-                  : ""
-              }
-            />
+                    <td className="py-3">
+                      {item.tanggal
+                        ? new Date(item.tanggal)
+                          .toLocaleString("id-ID")
+                        : "-"}
+                    </td>
 
-            {grafikData.map((v, i) => {
+                  </tr>
 
-              const x = startX + i * stepX;
+                ))
 
-              const y =
-                200 -
-                (v / maxValue) * 180;
+              ) : (
 
-              return (
-                <g key={i}>
+                <tr>
 
-                  <text
-                    x={x}
-                    y={y - 12}
-                    textAnchor="middle"
-                    fontSize="9"
-                    fill="#5c3a32"
+                  <td
+                    colSpan="4"
+                    className="text-center py-5"
                   >
-                    Rp {v.toLocaleString("id-ID")}
-                  </text>
+                    Belum ada transaksi
+                  </td>
 
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r="5"
-                    fill="#5c3a32"
-                  />
+                </tr>
 
-                </g>
-              );
+              )}
 
-            })}
+            </tbody>
 
-            {["17", "18", "19", "20", "21", "22", "23", "00", "01"]
-              .map((jam, i) => (
+          </table>
 
-                <text
-                  key={i}
-                  x={startX + i * stepX}
-                  y="220"
-                  textAnchor="middle"
-                  fontSize="12"
-                >
-                  {jam}:00
-                </text>
-
-              ))}
-
-          </svg>
         </div>
+
       </div>
 
       {/* MENU TERLARIS */}
@@ -310,6 +296,13 @@ function Dashboard() {
           })}
         </div>
       </div>
+
+      <DetailRiwayat
+        open={openDetail}
+        onClose={() => setOpenDetail(false)}
+        dataPesanan={selectedData}
+        detailMenu={detailMenu}
+      />
 
     </div>
   );
