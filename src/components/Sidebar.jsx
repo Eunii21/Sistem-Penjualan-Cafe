@@ -26,8 +26,6 @@ function Sidebar({ open, setOpen }) {
 
     { text: "Stok Barang", icon: <Package size={20} />, path: "/dashboard/stok" },
 
-    { text: "Riwayat", icon: <History size={20} />, path: "/dashboard/riwayat" },
-
     { text: "Laporan", icon: <FileBarChart size={20} />, path: "/dashboard/laporan" },
   ];
 

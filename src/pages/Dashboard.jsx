@@ -153,7 +153,7 @@ function Dashboard() {
     <div className="px-4 md:px-8 py-6">
 
       <h1 className="text-2xl md:text-3xl font-abhaya mb-6">
-        Dashboard
+        BERANDA
       </h1>
 
       {/* CARDS */}

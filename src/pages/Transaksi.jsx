@@ -223,7 +223,7 @@ export default function Transaksi() {
       // =====================================
       alert("Pesanan berhasil disimpan!");
 
-      navigate("/dashboard/riwayat");
+      navigate("/dashboard/");
 
     } catch (err) {
       console.log("ERROR FINAL:", err);

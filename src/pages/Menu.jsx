@@ -116,6 +116,34 @@ export default function Menu() {
       }
 
       // =========================================
+      // AMBIL NAMA MENU
+      // =========================================
+      const { data: menuItem, error: menuItemError } =
+        await supabase
+          .from("Menu")
+          .select("nama_menu")
+          .eq("id", id)
+          .single();
+
+      if (menuItemError) {
+        console.log("MENU ITEM ERROR:", menuItemError);
+        return;
+      }
+
+      // =========================================
+      // HAPUS STOK BERDASARKAN NAMA MENU
+      // =========================================
+      const { error: stokDeleteError } =
+        await supabase
+          .from("Stok")
+          .delete()
+          .eq("nama_menu", menuItem.nama_menu);
+
+      if (stokDeleteError) {
+        console.log("STOK DELETE ERROR:", stokDeleteError);
+      }
+
+      // =========================================
       // HAPUS MENU
       // =========================================
       const { error } = await supabase

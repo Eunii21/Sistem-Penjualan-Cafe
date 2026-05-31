@@ -12,7 +12,6 @@ import UbahMenu from "./pages/UbahMenu";
 import TambahStok from "./pages/TambahStok";
 import UbahStok from "./pages/UbahStok";
 import UbahSandi from "./pages/UbahSandi";
-import Riwayat from "./pages/Riwayat";
 import DetailRiwayat from "./pages/DetailRiwayat";
 import Laporan from "./pages/Laporan";
 
@@ -33,7 +32,6 @@ function App() {
         <Route path="ubah-menu/:id" element={<UbahMenu />} />
         <Route path="tambah-stok" element={<TambahStok />} />
         <Route path="ubah-stok" element={<UbahStok />} />
-        <Route path="riwayat" element={<Riwayat />} />
         <Route path="detailriwayat" element={<DetailRiwayat />} />
         <Route path="laporan" element={<Laporan />} />
       </Route>
