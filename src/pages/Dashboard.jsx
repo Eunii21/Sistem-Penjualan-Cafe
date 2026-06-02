@@ -78,19 +78,19 @@ function Dashboard() {
       const { data: detail } = await supabase
         .from("Detail_Pesanan")
         .select(`
-            jumlah,
-            id_pesanan,
-            Menu (
-                nama_menu
-            )
-            `)
+                    jumlah,
+                    id_pesanan,
+                    nama_menu
+                `)
         .in("id_pesanan", idPesananHariIni);
+
+      console.log("DETAIL DASHBOARD:", detail);
 
       const menuCount = {};
 
       detail?.forEach((item) => {
 
-        const nama = item.Menu?.nama_menu;
+        const nama = item.nama_menu;
 
         if (!nama) return;
 
@@ -135,8 +135,12 @@ function Dashboard() {
     const { data, error } = await supabase
       .from("Detail_Pesanan")
       .select(`
-        *,
-        Menu (*)
+        id,
+        id_pesanan,
+        nama_menu,
+        harga,
+        jumlah,
+        subtotal
         `)
       .eq("id_pesanan", idPesanan);
 
@@ -153,7 +157,7 @@ function Dashboard() {
     <div className="px-4 md:px-8 py-6">
 
       <h1 className="text-2xl md:text-3xl font-abhaya mb-6">
-        BERANDA
+        Dashboard
       </h1>
 
       {/* CARDS */}

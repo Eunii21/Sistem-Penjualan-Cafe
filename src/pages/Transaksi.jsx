@@ -112,18 +112,24 @@ export default function Transaksi() {
       // =====================================
       const detailPesanan = cartItems.map((item) => ({
         id_pesanan: pesananBaru.id,
-        id_menu: item.id,
+        nama_menu: item.nama_menu,
+        harga: item.harga,
         jumlah: item.jumlah,
         subtotal: item.harga * item.jumlah,
       }));
 
-      const { error: errorDetail } = await supabase
-        .from("Detail_Pesanan")
-        .insert(detailPesanan);
+      const { data: hasilDetail, error: errorDetail } =
+        await supabase
+          .from("Detail_Pesanan")
+          .insert(detailPesanan)
+          .select();
+
+      console.log("DETAIL YANG DIKIRIM:", detailPesanan);
+      console.log("HASIL DETAIL:", hasilDetail);
 
       if (errorDetail) {
         console.log("ERROR DETAIL:", errorDetail);
-        alert("Gagal menyimpan detail pesanan");
+        alert(JSON.stringify(errorDetail));
         return;
       }
 
@@ -160,14 +166,17 @@ export default function Transaksi() {
       }
 
       // =====================================
-      // BUAT NOMOR PESANAN BERURUT
+      // BUAT NOMOR PESANAN RESET SETIAP HARI
       // =====================================
-      const { data: riwayatTerakhir, error: errorNomor } =
+
+      const hariIni = new Date().toLocaleDateString("sv-SE", {
+        timeZone: "Asia/Makassar",
+      });
+
+      const { data: semuaRiwayat, error: errorNomor } =
         await supabase
           .from("Riwayat")
-          .select("no_pesanan")
-          .order("no_pesanan", { ascending: false })
-          .limit(1);
+          .select("no_pesanan, tanggal");
 
       if (errorNomor) {
         console.log("ERROR NOMOR:", errorNomor);
@@ -175,25 +184,37 @@ export default function Transaksi() {
         return;
       }
 
+      // Ambil transaksi hari ini saja
+      const riwayatHariIni = (semuaRiwayat || []).filter(
+        (item) => {
+          if (!item.tanggal) return false;
+
+          const tanggalRiwayat =
+            new Date(item.tanggal)
+              .toLocaleDateString("sv-SE", {
+                timeZone: "Asia/Makassar",
+              });
+
+          return tanggalRiwayat === hariIni;
+        }
+      );
+
       let nomorUrut = 1;
 
-      if (
-        riwayatTerakhir &&
-        riwayatTerakhir.length > 0
-      ) {
+      if (riwayatHariIni.length > 0) {
 
-        // AMBIL ANGKA DARI P0001
-        const nomorLama = parseInt(
-          riwayatTerakhir[0].no_pesanan.replace("P", "")
+        const nomorTerbesar = Math.max(
+          ...riwayatHariIni.map((item) =>
+            parseInt(
+              item.no_pesanan.replace("P", "")
+            )
+          )
         );
 
-        nomorUrut = nomorLama + 1;
+        nomorUrut = nomorTerbesar + 1;
       }
 
-      // FORMAT NOMOR PESANAN
-      const noPesanan = `P${String(
-        nomorUrut
-      ).padStart(4, "0")}`;
+      const noPesanan = `P${String(nomorUrut).padStart(4, "0")}`;
 
       // =====================================
       // INSERT RIWAYAT

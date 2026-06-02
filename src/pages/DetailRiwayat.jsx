@@ -9,6 +9,9 @@ export default function DetailRiwayat({
 
     if (!open || !dataPesanan) return null;
 
+    console.log("DATA PESANAN:", dataPesanan);
+    console.log("DETAIL MENU MODAL:", detailMenu);
+
     const formatRupiah = (angka) => {
         return Number(angka || 0).toLocaleString("id-ID");
     };
@@ -45,10 +48,6 @@ export default function DetailRiwayat({
                     <h2 className="text-3xl font-bold">
                         Detail Riwayat Pesanan
                     </h2>
-
-                    <button onClick={onClose}>
-                        <X size={24} />
-                    </button>
 
                 </div>
 
@@ -121,52 +120,38 @@ export default function DetailRiwayat({
                         </thead>
 
                         <tbody>
-
                             {(detailMenu || []).length > 0 ? (
 
-                                detailMenu.map((item, index) => {
+                                detailMenu.map((item, index) => (
 
-                                    const harga =
-                                        item.Menu?.harga_makanan ||
-                                        item.Menu?.harga_panas ||
-                                        item.Menu?.harga_dingin ||
-                                        item.Menu?.harga ||
-                                        0;
+                                    <tr key={index}>
 
-                                    return (
+                                        <td>
+                                            {item.nama_menu}
+                                        </td>
 
-                                        <tr key={index}>
+                                        <td>
+                                            {item.jumlah}
+                                        </td>
 
-                                            <td>
-                                                {item.Menu?.nama_menu}
-                                            </td>
+                                        <td>
+                                            Rp {formatRupiah(item.harga)}
+                                        </td>
 
-                                            <td>
-                                                {item.jumlah}
-                                            </td>
+                                        <td>
+                                            Rp {formatRupiah(item.subtotal)}
+                                        </td>
 
-                                            <td>
-                                                Rp {formatRupiah(harga)}
-                                            </td>
+                                    </tr>
 
-                                            <td>
-                                                Rp {formatRupiah(item.subtotal)}
-                                            </td>
-
-                                        </tr>
-
-                                    );
-
-                                })
+                                ))
 
                             ) : (
 
                                 <tr>
-
                                     <td colSpan="4">
                                         Tidak ada detail menu
                                     </td>
-
                                 </tr>
 
                             )}
