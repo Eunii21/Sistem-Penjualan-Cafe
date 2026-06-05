@@ -20,11 +20,11 @@ function Sidebar({ open, setOpen }) {
   const menus = [
     { text: "Beranda", icon: <Home size={20} />, path: "/dashboard" },
 
-    { text: "Transaksi", icon: <DollarSign size={20} />, path: "/dashboard/transaksi" },
-
     { text: "Menu Kafe", icon: <Coffee size={20} />, path: "/dashboard/menu" },
 
-    { text: "Stok Barang", icon: <Package size={20} />, path: "/dashboard/stok" },
+    { text: "Transaksi", icon: <DollarSign size={20} />, path: "/dashboard/transaksi" },
+
+    { text: "Stok Menu", icon: <Package size={20} />, path: "/dashboard/stok" },
 
     { text: "Laporan", icon: <FileBarChart size={20} />, path: "/dashboard/laporan" },
   ];

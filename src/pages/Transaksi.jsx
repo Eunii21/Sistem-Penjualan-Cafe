@@ -20,25 +20,53 @@ export default function Transaksi() {
   }, [location.state]);
 
   // TAMBAH JUMLAH
-  function tambahJumlah(id) {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id
+  function tambahJumlah(id, varian) {
+    setCartItems((prev) => {
+
+      const itemDipilih = prev.find(
+        (item) =>
+          item.id === id &&
+          item.varian === varian
+      );
+
+      if (!itemDipilih) return prev;
+
+      // HITUNG TOTAL SEMUA VARIAN MENU INI
+      const totalMenu = prev
+        .filter((item) => item.id === id)
+        .reduce(
+          (total, item) =>
+            total + item.jumlah,
+          0
+        );
+
+      // CEK STOK GABUNGAN
+      if (totalMenu >= itemDipilih.stok) {
+        alert(
+          `Stok ${itemDipilih.nama_menu} hanya tersedia ${itemDipilih.stok}`
+        );
+        return prev;
+      }
+
+      return prev.map((item) =>
+        item.id === id &&
+          item.varian === varian
           ? {
             ...item,
             jumlah: item.jumlah + 1,
           }
           : item
-      )
-    );
+      );
+    });
   }
 
   // KURANG JUMLAH
-  function kurangJumlah(id) {
+  function kurangJumlah(id, varian) {
     setCartItems((prev) =>
       prev
         .map((item) =>
-          item.id === id
+          item.id === id &&
+            item.varian === varian
             ? {
               ...item,
               jumlah: item.jumlah - 1,
@@ -50,9 +78,15 @@ export default function Transaksi() {
   }
 
   // HAPUS ITEM
-  function hapusItem(id) {
+  function hapusItem(id, varian) {
     setCartItems((prev) =>
-      prev.filter((item) => item.id !== id)
+      prev.filter(
+        (item) =>
+          !(
+            item.id === id &&
+            item.varian === varian
+          )
+      )
     );
   }
 
@@ -85,6 +119,26 @@ export default function Transaksi() {
         return;
       }
 
+      for (const item of cartItems) {
+
+        const totalMenu = cartItems
+          .filter(
+            (x) => x.id === item.id
+          )
+          .reduce(
+            (total, x) =>
+              total + x.jumlah,
+            0
+          );
+
+        if (totalMenu > item.stok) {
+          alert(
+            `Stok ${item.nama_menu} tidak mencukupi`
+          );
+          return;
+        }
+      }
+
       // =====================================
       // INSERT PESANAN
       // =====================================
@@ -112,7 +166,11 @@ export default function Transaksi() {
       // =====================================
       const detailPesanan = cartItems.map((item) => ({
         id_pesanan: pesananBaru.id,
-        nama_menu: item.nama_menu,
+
+        nama_menu: item.varian
+          ? `${item.nama_menu} ${item.varian}`
+          : item.nama_menu,
+
         harga: item.harga,
         jumlah: item.jumlah,
         subtotal: item.harga * item.jumlah,
@@ -298,7 +356,7 @@ export default function Transaksi() {
               ) : (
                 cartItems.map((item) => (
                   <div
-                    key={item.id}
+                    key={`${item.id}-${item.varian || "default"}`}
                     className="flex items-center justify-between py-4"
                   >
                     <div className="flex items-center gap-4">
@@ -313,7 +371,9 @@ export default function Transaksi() {
 
                       <div>
                         <h4 className="font-bold">
-                          {item.nama_menu}
+                          {item.varian
+                            ? `${item.nama_menu} ${item.varian}`
+                            : item.nama_menu}
                         </h4>
 
                         <p className="text-sm text-gray-500">
@@ -326,7 +386,10 @@ export default function Transaksi() {
                       <div className="flex items-center border border-[#dac2b1] rounded-lg bg-white overflow-hidden">
                         <button
                           onClick={() =>
-                            kurangJumlah(item.id)
+                            kurangJumlah(
+                              item.id,
+                              item.varian
+                            )
                           }
                           className="px-3 py-1 hover:bg-gray-100 transition-colors"
                         >
@@ -339,7 +402,10 @@ export default function Transaksi() {
 
                         <button
                           onClick={() =>
-                            tambahJumlah(item.id)
+                            tambahJumlah(
+                              item.id,
+                              item.varian
+                            )
                           }
                           className="px-3 py-1 hover:bg-gray-100 transition-colors"
                         >
@@ -349,7 +415,10 @@ export default function Transaksi() {
 
                       <button
                         onClick={() =>
-                          hapusItem(item.id)
+                          hapusItem(
+                            item.id,
+                            item.varian
+                          )
                         }
                         className="text-red-600 p-1 hover:bg-red-50 rounded-lg transition-colors"
                       >
@@ -399,7 +468,7 @@ export default function Transaksi() {
                   state: {
                     pesanan: Object.fromEntries(
                       cartItems.map((item) => [
-                        item.id,
+                        `${item.id}-${item.varian || "default"}`,
                         {
                           jumlah: item.jumlah,
                           varian: item.varian,
@@ -410,9 +479,9 @@ export default function Transaksi() {
                   },
                 })
               }
-              className="w-full border border-red-700 text-red-700 hover:bg-red-50 py-3 rounded-xl font-bold transition-colors"
+              className="w-full bg-[#1e6f43] hover:bg-[#175634] text-white py-3 rounded-xl font-bold transition-colors"
             >
-              Kembali Ke Menu
+              Tambah Menu
             </button>
           </div>
         </div>

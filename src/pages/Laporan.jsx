@@ -374,7 +374,7 @@ export default function Laporan() {
         mb-6
         "
       >
-        Laporan Penjualan
+        LAPORAN PENJUALAN
       </h1>
 
       {/* FILTER */}
@@ -555,7 +555,7 @@ export default function Laporan() {
           ) : (
             <div className="w-full h-[420px] relative border rounded-lg p-6">
 
-              <div className="absolute left-2 top-5 h-[300px] flex flex-col justify-between text-xs text-gray-600">
+              <div className="absolute left-0 top-[20px] h-[240px] flex flex-col justify-between text-xs text-gray-600">
 
                 <span>
                   Rp {rupiah(maxPendapatan)}
@@ -606,8 +606,8 @@ export default function Laporan() {
                           * (chartWidth - paddingX * 2);
 
                       const y =
-                        chartHeight -
-                        (item.total / max) * 240;
+                        260 -
+                        (item.total / max) * 220;
 
                       return `${x},${y}`;
                     })
@@ -694,7 +694,7 @@ export default function Laporan() {
                       {/* Titik grafik */}
                       {grafikPendapatan.map((item, index) => {
                         const chartWidth = 940;
-                        const chartHeight = 260;
+                        const chartHeight = 280;
                         const paddingX = 60;
 
                         const x =
@@ -706,8 +706,8 @@ export default function Laporan() {
                             (chartWidth - paddingX * 2);
 
                         const y =
-                          chartHeight -
-                          (item.total / max) * 240;
+                          260 -
+                          (item.total / max) * 220;
 
                         return (
                           <circle
@@ -736,7 +736,7 @@ export default function Laporan() {
                           <text
                             key={`label-${index}`}
                             x={x}
-                            y="325"
+                            y="295"
                             textAnchor="middle"
                             fontSize="12"
                             fill="#666"

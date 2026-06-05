@@ -19,7 +19,7 @@ export default function Menu() {
   const [search, setSearch] = useState("");
   const [kategori, setKategori] = useState("Semua");
 
-  // DROPDOWN KATEGORI
+
   const [showKategori, setShowKategori] = useState(false);
 
   // DROPDOWN TITIK TIGA
@@ -171,36 +171,47 @@ export default function Menu() {
 
   // LOGIKA UTAMA: HANDLING TAMBAH PESANAN & SELEKSI MINUMAN
   const handleTambahPesanan = (item) => {
-    // Deteksi jika item tidak memiliki harga_makanan, berarti item tersebut adalah MINUMAN
-    const apakahMinuman = !item.harga_makanan && (item.harga_dingin || item.harga_panas);
 
-    if (apakahMinuman) {
-      // Jika sudah pernah dipilih variannya, tombol luar tinggal menambah kuantitas biasa
-      if (pesanan[item.id]) {
-        setPesanan((prev) => ({
-          ...prev,
-          [item.id]: {
-            ...prev[item.id],
-            jumlah: prev[item.id].jumlah + 1,
-          },
-        }));
-      } else {
-        // Jika belum ada di keranjang, buka modal pop-up pilihan suhu
-        setSelectedItemMinuman(item);
-        setVarianTerpilih("Panas"); // reset default ke panas tiap buka modal
-        setShowVarianModal(true);
-      }
-    } else {
-      // JIKA MAKANAN: Langsung masuk ke keranjang tanpa lewat pop-up modal
-      setPesanan((prev) => ({
-        ...prev,
-        [item.id]: {
-          jumlah: (prev[item.id]?.jumlah || 0) + 1,
-          varian: null,
-          harga_terpilih: item.harga_makanan || item.harga || 0,
-        },
-      }));
+    const jumlahSaatIni = Object.entries(pesanan)
+      .filter(([key]) =>
+        key.startsWith(`${item.id}-`)
+      )
+      .reduce(
+        (total, [, value]) =>
+          total + value.jumlah,
+        0
+      );
+
+    // CEK STOK
+    if (jumlahSaatIni >= item.stok) {
+      alert(`Stok ${item.nama_menu} hanya tersedia ${item.stok}`);
+      return;
     }
+
+    const apakahMinuman =
+      !item.harga_makanan &&
+      (item.harga_dingin || item.harga_panas);
+
+    // JIKA MINUMAN
+    if (apakahMinuman) {
+      setSelectedItemMinuman(item);
+      setVarianTerpilih("Panas");
+      setShowVarianModal(true);
+      return;
+    }
+
+    // JIKA MAKANAN
+    setPesanan((prev) => ({
+      ...prev,
+      [item.id]: {
+        jumlah: (prev[item.id]?.jumlah || 0) + 1,
+        varian: null,
+        harga_terpilih:
+          item.harga_makanan ||
+          item.harga ||
+          0,
+      },
+    }));
   };
 
   // HANDLER SUBMIT MODAL MINUMAN
@@ -212,35 +223,54 @@ export default function Menu() {
       ? (selectedItemMinuman.harga_panas || selectedItemMinuman.harga)
       : (selectedItemMinuman.harga_dingin || selectedItemMinuman.harga);
 
-    setPesanan((prev) => ({
-      ...prev,
-      [selectedItemMinuman.id]: {
-        jumlah: 1,
-        varian: varianTerpilih,
-        harga_terpilih: hargaFix,
-      },
-    }));
+    setPesanan((prev) => {
+
+      const key =
+        `${selectedItemMinuman.id}-${varianTerpilih}`;
+
+      const jumlahLama =
+        prev[key]?.jumlah || 0;
+
+      return {
+        ...prev,
+        [key]: {
+          jumlah: jumlahLama + 1,
+          varian: varianTerpilih,
+          harga_terpilih: hargaFix,
+        },
+      };
+
+    });
 
     setShowVarianModal(false);
     setSelectedItemMinuman(null);
   };
 
   // KURANG PESANAN
-  const handleKurangPesanan = (id) => {
+  const handleKurangPesanan = (key) => {
+
     setPesanan((prev) => {
-      const itemAda = prev[id];
+
+      const itemAda = prev[key];
+
       if (!itemAda) return prev;
 
-      const jumlahBaru = itemAda.jumlah - 1;
+      const jumlahBaru =
+        itemAda.jumlah - 1;
 
       if (jumlahBaru <= 0) {
-        const { [id]: _, ...sisaPesanan } = prev;
+
+        const {
+          [key]: _,
+          ...sisaPesanan
+        } = prev;
+
         return sisaPesanan;
       }
 
       return {
         ...prev,
-        [id]: {
+        [key]: {
           ...itemAda,
           jumlah: jumlahBaru,
         },
@@ -442,8 +472,15 @@ export default function Menu() {
         }}
       >
         {filteredMenu.map((item) => {
-          const jumlahItem =
-            pesanan[item.id]?.jumlah || 0;
+          const jumlahItem = Object.entries(pesanan)
+            .filter(([key]) =>
+              key.startsWith(`${item.id}-`)
+            )
+            .reduce(
+              (total, [, value]) =>
+                total + value.jumlah,
+              0
+            );
 
           const isStokHabis = item.stok <= 0;
 
@@ -661,9 +698,18 @@ export default function Menu() {
                   }}
                 >
                   <button
-                    onClick={() =>
-                      handleKurangPesanan(item.id)
-                    }
+                    onClick={() => {
+
+                      const keyTerakhir =
+                        Object.keys(pesanan)
+                          .find((key) =>
+                            key.startsWith(`${item.id}-`)
+                          );
+
+                      if (keyTerakhir) {
+                        handleKurangPesanan(keyTerakhir);
+                      }
+                    }}
                     style={{
                       background: "transparent",
                       border: "none",
@@ -688,9 +734,8 @@ export default function Menu() {
                   </span>
 
                   <button
-                    onClick={() =>
-                      handleTambahPesanan(item)
-                    }
+                    onClick={() => handleTambahPesanan(item)}
+                    disabled={jumlahItem >= item.stok}
                     style={{
                       background: "transparent",
                       border: "none",
@@ -698,7 +743,14 @@ export default function Menu() {
                       fontSize: "22px",
                       width: "45px",
                       height: "40px",
-                      cursor: "pointer",
+                      cursor:
+                        jumlahItem >= item.stok
+                          ? "not-allowed"
+                          : "pointer",
+                      opacity:
+                        jumlahItem >= item.stok
+                          ? 0.5
+                          : 1,
                     }}
                   >
                     +
@@ -734,20 +786,34 @@ export default function Menu() {
       {totalItemKeranjang > 0 && (
         <button
           onClick={() => {
-            const dataKeranjang = menuData
-              .filter((item) => pesanan[item.id])
-              .map((item) => ({
-                id: item.id,
+            const dataKeranjang = [];
+
+            Object.entries(pesanan).forEach(([key, value]) => {
+
+              const idMenu = parseInt(key.split("-")[0]);
+
+              const item = menuData.find(
+                (menu) => menu.id === idMenu
+              );
+
+              if (!item) return;
+
+              dataKeranjang.push({
+                id: idMenu,
                 nama_menu: item.nama_menu,
                 gambar: item.gambar,
                 id_kategori: item.id_kategori,
-                // Gunakan harga real yang disimpan dari pilihan modal
-                harga: pesanan[item.id].harga_terpilih,
-                jumlah: pesanan[item.id].jumlah,
-                varian: pesanan[item.id].varian,
+                harga: value.harga_terpilih,
+                jumlah: value.jumlah,
+                varian: value.varian,
                 harga_panas: item.harga_panas,
-                harga_dingin: item.harga_dingin
-              }));
+                harga_dingin: item.harga_dingin,
+
+                // TAMBAHAN
+                stok: item.stok,
+              });
+
+            });
 
             navigate(
               "/dashboard/transaksi",
