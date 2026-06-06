@@ -463,14 +463,7 @@ export default function Menu() {
       </div>
 
       {/* GRID MENU */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fill, minmax(230px, 1fr))",
-          gap: "20px",
-        }}
-      >
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
         {filteredMenu.map((item) => {
           const jumlahItem = Object.entries(pesanan)
             .filter(([key]) =>
@@ -487,18 +480,20 @@ export default function Menu() {
           return (
             <div
               key={item.id}
-              style={{
-                background: "#F8F3EE",
-                borderRadius: "16px",
-                padding: "12px",
-                position: "relative",
-                boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                minHeight: "300px",
-                border: "1px solid #E6DED4",
-              }}
+              className="
+                relative
+                bg-[#F8F3EE]
+                rounded-2xl
+                p-2 md:p-3
+                border
+                border-[#E6DED4]
+                shadow
+                flex
+                flex-col
+                justify-between
+                min-h-[220px]
+                md:min-h-[300px]
+              "
             >
               {/* TITIK TIGA */}
               <div
@@ -600,25 +595,19 @@ export default function Menu() {
                     ? item.gambar
                     : "https://via.placeholder.com/300x200?text=No+Image"
                 }
-                alt={item.nama_menu}
-                style={{
-                  width: "100%",
-                  height: "170px",
-                  objectFit: "cover",
-                  borderRadius: "12px",
-                  marginBottom: "12px",
-                }}
+                className="
+                  w-full
+                  h-[100px]
+                  md:h-[170px]
+                  object-cover
+                  rounded-xl
+                  mb-2
+                  md:mb-3
+                "
               />
 
               {/* NAMA */}
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  margin: "0 0 6px 0",
-                  color: "#4A2E2B",
-                }}
-              >
+              <h3 className="text-xs md:text-base font-bold text-[#4A2E2B]">
                 {item.nama_menu}
               </h3>
 

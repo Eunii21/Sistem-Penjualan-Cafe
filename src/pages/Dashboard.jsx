@@ -156,12 +156,12 @@ function Dashboard() {
   return (
     <div className="px-4 md:px-8 py-6">
 
-      <h1 className="text-2xl md:text-3xl font-abhaya mb-6">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-abhaya mb-6">
         BERANDA
       </h1>
 
       {/* CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10">
 
         <Card icon={<Wallet size={16} />} title="Total Pendapatan" value={`Rp ${totalPendapatan.toLocaleString("id-ID")}`} />
 
@@ -178,9 +178,9 @@ function Dashboard() {
           Riwayat Transaksi Terbaru
         </h3>
 
-        <div className="overflow-y-auto max-h-[300px]">
+        <div className="overflow-x-auto overflow-y-auto max-h-[300px]">
 
-          <table className="w-full">
+          <table className="w-full min-w-[650px]">
 
             <thead>
 
@@ -282,7 +282,7 @@ function Dashboard() {
 
       {/* MENU TERLARIS */}
       <div className="flex justify-center">
-        <div className="w-full max-w-md bg-[#f4f1ee] rounded-2xl shadow-md p-5">
+        <div className="w-full sm:max-w-md bg-[#f4f1ee] rounded-2xl shadow-md p-5">
           <h3 className="text-center mb-4 font-semibold">Menu terlaris</h3>
 
           {topMenus.map(([nama, jumlah]) => {
@@ -319,7 +319,9 @@ function Card({ icon, title, value }) {
         {icon} {title}
       </div>
 
-      <h2 className="text-lg font-semibold mt-3">{value}</h2>
+      <h2 className="text-base sm:text-lg font-semibold mt-3 break-words">
+        {value}
+      </h2>
     </div>
   );
 }
@@ -327,12 +329,17 @@ function Card({ icon, title, value }) {
 function Progress({ label, value }) {
   return (
     <div className="mb-4">
-      <p className="text-sm mb-1">{label}</p>
+      <p className="text-xs sm:text-sm mb-1 break-words">
+        {label}
+      </p>
+
       <div className="w-full h-2 bg-gray-300 rounded-full">
-        <div className="h-2 bg-[#5c3a32] rounded-full" style={{ width: value }} />
+        <div
+          className="h-2 bg-[#5c3a32] rounded-full"
+          style={{ width: value }}
+        />
       </div>
     </div>
   );
 }
-
 export default Dashboard;

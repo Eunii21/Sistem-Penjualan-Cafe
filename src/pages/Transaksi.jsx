@@ -312,13 +312,13 @@ export default function Transaksi() {
 
   return (
     <div className="min-h-screen bg-[#f4ece1] p-4 md:p-6 text-[#36211d]">
-      <div className="mb-6 border-b border-[#dac2b1] pb-4">
+      <div className="mb-6 flex flex-col md:flex-row md:justify-between gap-4">
         <h1 className="font-serif text-2xl md:text-3xl font-bold uppercase">
           TRANSAKSI
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <div className="lg:col-span-2 flex flex-col bg-[#fdfbf7] rounded-xl border border-[#dac2b1] shadow-sm overflow-hidden">
           <div className="bg-[#dac2b1]/40 px-4 py-3">
             <h2 className="font-semibold text-lg">
@@ -326,16 +326,16 @@ export default function Transaksi() {
             </h2>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             <div className="mb-6 flex justify-between gap-4">
               <div>
 
-                <h3 className="text-3xl font-black">
+                <h3 className="text-2xl md:text-3xl font-black">
                   Keranjang
                 </h3>
               </div>
 
-              <div className="flex-1 max-w-sm">
+              <div className="w-full md:flex-1 md:max-w-sm">
                 <input
                   type="text"
                   value={namaPemesan}
@@ -357,16 +357,16 @@ export default function Transaksi() {
                 cartItems.map((item) => (
                   <div
                     key={`${item.id}-${item.varian || "default"}`}
-                    className="flex items-center justify-between py-4"
+                    className="flex flex-col md:flex-row md:items-center md:justify-between py-4 gap-4"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 w-full">
                       <img
                         src={
                           item.gambar ||
                           "https://via.placeholder.com/150?text=No+Image"
                         }
                         alt={item.nama_menu}
-                        className="w-16 h-16 rounded-lg object-cover border border-[#dac2b1]"
+                        className="w-14 h-14 md:w-16 md:h-16 rounded-lg object-cover border border-[#dac2b1]" 
                       />
 
                       <div>
@@ -382,7 +382,7 @@ export default function Transaksi() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto">
                       <div className="flex items-center border border-[#dac2b1] rounded-lg bg-white overflow-hidden">
                         <button
                           onClick={() =>
@@ -444,7 +444,7 @@ export default function Transaksi() {
 
             <div className="border-t border-[#dac2b1] my-4"></div>
 
-            <div className="flex justify-between text-xl font-bold">
+            <div className="flex justify-between text-lg md:text-xl font-bold">
               <span>Total</span>
 
               <span className="text-[#1e6f43]">

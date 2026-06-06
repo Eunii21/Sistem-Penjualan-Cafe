@@ -150,15 +150,20 @@ export default function UbahMenu() {
       {/* MODAL CONTAINER */}
       <div
         className="
-          bg-white
-          w-full
-          max-w-[650px]
-          rounded-md
-          relative
-          shadow-xl
-          px-10
-          py-8
-        "
+        bg-white
+        w-full
+        max-w-[650px]
+        rounded-md
+        relative
+        shadow-xl
+        px-4
+        sm:px-6
+        md:px-10
+        py-6
+        md:py-8
+        max-h-[90vh]
+        overflow-y-auto
+      "
       >
         {/* CLOSE BUTTON */}
         <button
@@ -172,12 +177,14 @@ export default function UbahMenu() {
         {/* TITLE */}
         <h1
           className="
-            text-center
-            text-[34px]
-            font-bold
-            text-[#4B2E2B]
-            mb-10
-          "
+          text-center
+          text-2xl
+          md:text-[34px]
+          font-bold
+          text-[#4B2E2B]
+          mb-8
+          md:mb-10
+        "
         >
           Ubah Menu
         </h1>
@@ -187,7 +194,7 @@ export default function UbahMenu() {
           <div className="space-y-5">
 
             {/* NAMA MENU */}
-            <div className="grid grid-cols-[150px_1fr] items-center gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-3 md:gap-5">
               <label className="text-[17px] font-semibold text-[#4B2E2B]">
                 Nama Menu
               </label>
@@ -208,7 +215,7 @@ export default function UbahMenu() {
             </div>
 
             {/* KATEGORI */}
-            <div className="grid grid-cols-[150px_1fr] gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] gap-3 md:gap-5">
               <label className="text-[17px] font-semibold text-[#4B2E2B] pt-2">
                 Kategori
               </label>
@@ -256,7 +263,7 @@ export default function UbahMenu() {
 
             {/* HARGA MAKANAN */}
             {kategori === "1" && (
-              <div className="grid grid-cols-[150px_1fr] items-center gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] items-center gap-3 md:gap-5">
                 <label className="text-[17px] font-semibold text-[#4B2E2B]">
                   Harga Makanan
                 </label>
@@ -288,7 +295,7 @@ export default function UbahMenu() {
 
             {/* HARGA MINUMAN */}
             {kategori === "2" && (
-              <div className="grid grid-cols-[150px_1fr] gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] gap-3 md:gap-5">
                 <label className="text-[17px] font-semibold text-[#4B2E2B] pt-2">
                   Harga Minuman
                 </label>
@@ -346,8 +353,8 @@ export default function UbahMenu() {
             )}
 
             {/* GAMBAR */}
-            <div className="grid grid-cols-[150px_1fr] gap-5 pt-2">
-              <div></div>
+            <div className="grid grid-cols-1 md:grid-cols-[150px_1fr] gap-3 md:gap-5">
+              <div className="hidden md:block"></div>
               <label
                 className="
                   border
@@ -392,12 +399,12 @@ export default function UbahMenu() {
           </div>
 
           {/* ACTION BUTTONS */}
-          <div className="flex justify-end gap-3 mt-8">
+          <div className="flex flex-col-reverse md:flex-row justify-end gap-3 mt-8">
             <button
               type="button"
               disabled={loading}
               onClick={() => navigate("/dashboard/menu")}
-              className="border border-gray-400 px-5 py-2 text-sm bg-white disabled:opacity-50"
+              className="border border-gray-400 px-5 py-2 text-sm bg-white disabled:opacity-50 w-full md:w-auto"
             >
               Batal
             </button>
@@ -405,7 +412,7 @@ export default function UbahMenu() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-[#4B2E2B] text-white px-5 py-2 text-sm disabled:opacity-50"
+              className="bg-[#4B2E2B] text-white px-5 py-2 text-sm disabled:opacity-50 w-full md:w-auto"
             >
               {loading ? "Menyimpan..." : "Simpan Perubahan"}
             </button>

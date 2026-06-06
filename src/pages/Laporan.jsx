@@ -296,7 +296,7 @@ export default function Laporan() {
       );
 
       doc.text(
-        "Telp: 082259530644 | Email: timothymumek22@gmail.com",
+        "Telp: 082259530644 | Email: Mesombang02@gmail.com",
         105,
         28,
         { align: "center" }
@@ -422,17 +422,12 @@ export default function Laporan() {
       className="
       min-h-screen
       bg-[#F5EEE6]
-      p-8
+      p-3
+      md:p-8
       "
     >
 
-      <h1
-        className="
-        text-3xl
-        font-bold
-        mb-6
-        "
-      >
+      <h1 className="text-xl md:text-3xl font-bold mb-4 md:mb-6">
         LAPORAN PENJUALAN
       </h1>
 
@@ -508,24 +503,29 @@ export default function Laporan() {
 
           <div
             className="
-  flex
-  items-end
-  gap-3
-  "
+            flex
+            flex-col
+            md:flex-row
+            md:items-end
+            gap-3
+            "
           >
 
             <button
               onClick={loadLaporan}
               className="
-    bg-green-500
-    text-white
-    px-6
-    py-3
-    rounded-lg
-    flex
-    items-center
-    gap-2
-    "
+              bg-green-500
+              text-white
+              px-6
+              py-3
+              rounded-lg
+              flex
+              items-center
+              justify-center
+              gap-2
+              w-full
+              md:w-auto
+              "
             >
               <Search size={18} />
               Filter Laporan
@@ -534,15 +534,18 @@ export default function Laporan() {
             <button
               onClick={downloadPDF}
               className="
-    bg-[#6B4F4F]
-    text-white
-    px-6
-    py-3
-    rounded-lg
-    flex
-    items-center
-    gap-2
-    "
+              bg-[#6B4F4F]
+              text-white
+              px-6
+              py-3
+              rounded-lg
+              flex
+              items-center
+              justify-center
+              gap-2
+              w-full
+              md:w-auto
+              "
             >
               <Download size={18} />
               Unduh PDF
@@ -559,8 +562,10 @@ export default function Laporan() {
       <div
         className="
         grid
+        grid-cols-2
         md:grid-cols-4
-        gap-4
+        gap-3
+        md:gap-4
         mb-6
         "
       >
@@ -594,6 +599,7 @@ export default function Laporan() {
       <div
         className="
         grid
+        grid-cols-1
         md:grid-cols-3
         gap-6
         mb-6
@@ -617,8 +623,8 @@ export default function Laporan() {
           <div className="w-full relative border rounded-lg p-4">
             <svg
               width="100%"
-              height="360"
-              viewBox="0 0 1000 360"
+              height="260"
+              viewBox="0 0 1000 320"
               preserveAspectRatio="none"
             >
               {(() => {
@@ -850,11 +856,11 @@ export default function Laporan() {
         bg-white
         rounded-xl
         shadow-sm
-        overflow-hidden
+        overflow-x-auto
         "
       >
 
-        <table className="w-full table-fixed">
+        <table className="min-w-[700px] w-full">
           <thead>
             <tr className="bg-[#6B4F4F] text-white">
               <th className="p-4 w-[20%] text-left">
@@ -937,9 +943,11 @@ function SummaryCard({
 
       <h2
         className="
-        text-2xl
+        text-lg
+        md:text-2xl
         font-bold
         mt-2
+        break-words
         "
       >
         {value}
