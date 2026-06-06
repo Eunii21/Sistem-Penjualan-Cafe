@@ -12,20 +12,16 @@ import {
   X
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import logoMesombang from "../assets/logo.png";
 
 function Sidebar({ open, setOpen }) {
   const navigate = useNavigate();
 
-  // Data menu utama kafe
   const menus = [
     { text: "Beranda", icon: <Home size={20} />, path: "/dashboard" },
-
     { text: "Menu Kafe", icon: <Coffee size={20} />, path: "/dashboard/menu" },
-
     { text: "Transaksi", icon: <DollarSign size={20} />, path: "/dashboard/transaksi" },
-
     { text: "Stok Menu", icon: <Package size={20} />, path: "/dashboard/stok" },
-
     { text: "Laporan", icon: <FileBarChart size={20} />, path: "/dashboard/laporan" },
   ];
 
@@ -52,7 +48,7 @@ function Sidebar({ open, setOpen }) {
         {/* Header Mobile */}
         <div className="p-5 border-b border-[#36211d] flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">☕</span>
+            <img src={logoMesombang} alt="Mesombang Logo" className="w-10 h-10 object-contain min-w-[40px]"/>
             <h1 className="font-serif text-xl font-bold tracking-wide text-[#f4ece1]">
               Mesombang Cafe
             </h1>
@@ -107,7 +103,7 @@ function Sidebar({ open, setOpen }) {
         {/* Header Desktop */}
         <div className="p-4 border-b border-[#36211d] h-[73px] flex items-center justify-between overflow-hidden">
           <div className="flex items-center gap-3 px-2">
-            <span className="text-2xl min-w-[32px] text-center">☕</span>
+            <img src={logoMesombang} alt="Mesombang Logo" className="w-10 h-10 object-contain min-w-[40px]"/>
             {open && (
               <h1 className="font-serif text-lg font-bold tracking-wide text-[#f4ece1] whitespace-nowrap animate-fade-in">
                 Mesombang Cafe

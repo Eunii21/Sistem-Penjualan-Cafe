@@ -3,6 +3,7 @@ import { supabase } from "../database/supabase";
 import { Search, Download } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import logoMesombang from "../assets/image.png";
 
 export default function Laporan() {
   const [sudahFilter, setSudahFilter] = useState(false);
@@ -165,6 +166,7 @@ export default function Laporan() {
         }))
         .sort((a, b) => a.tanggal - b.tanggal);
 
+    console.log("Total Pendapatan:", totalPendapatan);
     console.log("Grafik:", dataGrafikPendapatan);
 
     setGrafikPendapatan(
@@ -264,96 +266,153 @@ export default function Laporan() {
 
     const doc = new jsPDF();
 
-    doc.setFontSize(18);
+    const img = new Image();
+    img.src = logoMesombang;
 
-    doc.text(
-      "LAPORAN PENJUALAN MESOMBANG CAFE",
-      14,
-      15
-    );
+    img.onload = () => {
 
-    doc.setFontSize(11);
+      doc.addImage(
+        img,
+        "PNG",
+        15,
+        8,
+        25,
+        25
+      );
 
-    doc.text(
-      `Periode : ${dariTanggal || "-"
-      } s/d ${sampaiTanggal || "-"
-      }`,
-      14,
-      25
-    );
 
-    doc.text(
-      `Total Transaksi : ${summary.transaksi}`,
-      14,
-      35
-    );
+      // KOP SURAT
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("MESOMBANG CAFE", 105, 15, { align: "center" });
 
-    doc.text(
-      `Produk Terjual : ${summary.produk}`,
-      14,
-      42
-    );
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        "Jl. Boulevard 2. Manado",
+        105,
+        22,
+        { align: "center" }
+      );
 
-    doc.text(
-      `Total Pendapatan : Rp ${rupiah(
-        summary.pendapatan
-      )}`,
-      14,
-      49
-    );
+      doc.text(
+        "Telp: 082259530644 | Email: timothymumek22@gmail.com",
+        105,
+        28,
+        { align: "center" }
+      )
 
-    doc.text(
-      `Menu Terlaris : ${summary.menuTerlaris}`,
-      14,
-      56
-    );
+      // Garis pemisah
+      doc.setLineWidth(0.8);
+      doc.line(14, 34, 196, 34);
 
-    autoTable(doc, {
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
 
-      startY: 65,
+      doc.text(
+        `Periode : ${dariTanggal || "-"} s/d ${sampaiTanggal || "-"}`,
+        14,
+        55
+      );
 
-      head: [[
-        "No Pesanan",
-        "Tanggal",
-        "Nama Pemesan",
-        "Total Bayar"
-      ]],
+      doc.text(
+        `Total Transaksi : ${summary.transaksi}`,
+        14,
+        63
+      );
 
-      body: laporan.map(item => [
+      doc.text(
+        `Produk Terjual : ${summary.produk}`,
+        14,
+        71
+      );
 
-        item.no_pesanan,
+      doc.text(
+        `Total Pendapatan : Rp ${rupiah(summary.pendapatan)}`,
+        14,
+        79
+      );
 
-        new Date(
-          item.tanggal
-        ).toLocaleString("id-ID"),
+      doc.text(
+        `Menu Terlaris : ${summary.menuTerlaris}`,
+        14,
+        87
+      );
 
-        item.nama_pemesan,
+      autoTable(doc, {
 
-        `Rp ${rupiah(
-          item.total_harga
-        )}`
+        startY: 95,
 
-      ]),
+        head: [[
+          "No Pesanan",
+          "Tanggal",
+          "Nama Pemesan",
+          "Total Bayar"
+        ]],
 
-      styles: {
-        fontSize: 10
-      },
+        body: laporan.map(item => [
 
-      headStyles: {
-        fillColor: [107, 79, 79]
-      }
+          item.no_pesanan,
 
-    });
+          new Date(
+            item.tanggal
+          ).toLocaleString("id-ID"),
 
-    doc.save(
-      `Laporan-${new Date()
-        .toISOString()
-        .slice(0, 10)}.pdf`
-    );
+          item.nama_pemesan,
+
+          `Rp ${rupiah(
+            item.total_harga
+          )}`
+
+        ]),
+
+        styles: {
+          fontSize: 10
+        },
+
+        headStyles: {
+          fillColor: [107, 79, 79]
+        }
+
+      });
+
+      doc.save(
+        `Laporan-${new Date()
+          .toISOString()
+          .slice(0, 10)}.pdf`
+      );
+    };
   };
 
-  const maxPendapatan = Math.max(
-    ...grafikPendapatan.map(x => x.total),
+  function getMaxScale(nilai) {
+
+    if (nilai <= 1000000) {
+      return Math.ceil(nilai / 100000) * 100000;
+    }
+
+    if (nilai <= 5000000) {
+      return Math.ceil(nilai / 500000) * 500000;
+    }
+
+    if (nilai <= 10000000) {
+      return Math.ceil(nilai / 1000000) * 1000000;
+    }
+
+    return Math.ceil(nilai / 5000000) * 5000000;
+  }
+
+  const maxPendapatan = getMaxScale(
+    Math.max(
+      ...grafikPendapatan.map(item => item.total),
+      1
+    )
+  );
+
+  const stepPendapatan =
+  maxPendapatan / 5;
+
+  const maxMenu = Math.max(
+    ...grafikMenu.map(x => x.jumlah),
     1
   );
 
@@ -553,204 +612,201 @@ export default function Laporan() {
           ) : grafikPendapatan.length === 0 ? (
             <p>Tidak ada data</p>
           ) : (
-            <div className="w-full h-[420px] relative border rounded-lg p-6">
+  
 
-              <div className="absolute left-0 top-[20px] h-[240px] flex flex-col justify-between text-xs text-gray-600">
+          <div className="w-full relative border rounded-lg p-4">
+            <svg
+              width="100%"
+              height="360"
+              viewBox="0 0 1000 360"
+              preserveAspectRatio="none"
+            >
+              {(() => {
+                const max = maxPendapatan;
+                const paddingX = 180;   // ← lebih lebar agar label rupiah muat
+                const chartTop = 20;
+                const chartBottom = 300; // ← turunkan agar Rp 0 ada di bawah, bukan tengah
+                const chartLeft = paddingX;
+                const chartRight = 960;
+                const chartHeight = chartBottom - chartTop; // 280
 
-                <span>
-                  Rp {rupiah(maxPendapatan)}
-                </span>
+                const step = max / 5;
 
-                <span>
-                  Rp {rupiah(maxPendapatan * 0.75)}
-                </span>
+                const points = grafikPendapatan
+                  .map((item, index) => {
+                    const x =
+                      grafikPendapatan.length === 1
+                        ? (chartLeft + chartRight) / 2
+                        : chartLeft +
+                          (index / (grafikPendapatan.length - 1)) *
+                            (chartRight - chartLeft);
 
-                <span>
-                  Rp {rupiah(maxPendapatan * 0.5)}
-                </span>
+                    const y =
+                      chartBottom -
+                      (item.total / max) * chartHeight;
 
-                <span>
-                  Rp {rupiah(maxPendapatan * 0.25)}
-                </span>
+                    return `${x},${y}`;
+                  })
+                  .join(" ");
 
-                <span>Rp 0</span>
+                const firstX =
+                  grafikPendapatan.length === 1
+                    ? (chartLeft + chartRight) / 2
+                    : chartLeft;
+                const lastX =
+                  grafikPendapatan.length === 1
+                    ? (chartLeft + chartRight) / 2
+                    : chartRight;
 
-              </div>
+                const areaPoints =
+                  points + ` ${lastX},${chartBottom} ${firstX},${chartBottom}`;
 
-              <svg
-                width="100%"
-                height="380"
-                viewBox="0 0 1000 340"
-                preserveAspectRatio="none"
-              >
-                {(() => {
-                  const max = Math.max(
-                    ...grafikPendapatan.map(i => i.total),
-                    1
-                  );
+                return (
+                  <>
+                    {/* Background area */}
+                    <rect
+                      x={chartLeft}
+                      y={chartTop}
+                      width={chartRight - chartLeft}
+                      height={chartHeight}
+                      fill="#fafafa"
+                    />
 
-                  const points = grafikPendapatan
-                    .map((item, index) => {
-
-                      const chartWidth = 940;
-                      const chartHeight = 280;
-
-                      const paddingX = 60;
-
-                      const x =
-                        grafikPendapatan.length === 1
-                          ? chartWidth / 2
-                          : paddingX +
-                          (index /
-                            (grafikPendapatan.length - 1))
-                          * (chartWidth - paddingX * 2);
-
-                      const y =
-                        260 -
-                        (item.total / max) * 220;
-
-                      return `${x},${y}`;
-                    })
-                    .join(" ");
-
-                  return (
-                    <>
-                      {/* Background area grafik */}
-                      <rect
-                        x="60"
-                        y="20"
-                        width="880"
-                        height="260"
-                        fill="#fafafa"
-                      />
-
-                      {/* Grid horizontal */}
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <line
-                          key={`h-${i}`}
-                          x1="60"
-                          y1={20 + i * 52}
-                          x2="940"
-                          y2={20 + i * 52}
-                          stroke="#e5e5e5"
-                          strokeWidth="1"
-                        />
-                      ))}
-
-                      {/* Grid vertikal */}
-                      {grafikPendapatan.map((_, index) => {
-                        const chartWidth = 940;
-                        const paddingX = 60;
-
-                        const x =
-                          grafikPendapatan.length === 1
-                            ? chartWidth / 2
-                            : paddingX +
-                            (index /
-                              (grafikPendapatan.length - 1)) *
-                            (chartWidth - paddingX * 2);
-
-                        return (
+                    {/* Grid horizontal + Label Y di dalam SVG */}
+                    {[0, 1, 2, 3, 4, 5].map((i) => {
+                      const y = chartBottom - (i / 5) * chartHeight;
+                      const nilai = step * i;
+                      return (
+                        <g key={i}>
                           <line
-                            key={`v-${index}`}
-                            x1={x}
-                            y1="20"
-                            x2={x}
-                            y2="280"
+                            x1={chartLeft}
+                            y1={y}
+                            x2={chartRight}
+                            y2={y}
                             stroke="#e5e5e5"
                             strokeWidth="1"
                           />
-                        );
-                      })}
-
-                      {/* Sumbu Y */}
-                      <line
-                        x1="60"
-                        y1="20"
-                        x2="60"
-                        y2="280"
-                        stroke="#888"
-                        strokeWidth="2"
-                      />
-
-                      {/* Sumbu X */}
-                      <line
-                        x1="60"
-                        y1="280"
-                        x2="940"
-                        y2="280"
-                        stroke="#888"
-                        strokeWidth="2"
-                      />
-
-                      {/* Garis grafik */}
-                      <polyline
-                        fill="none"
-                        stroke="#6B4F4F"
-                        strokeWidth="3"
-                        points={points}
-                      />
-
-                      {/* Titik grafik */}
-                      {grafikPendapatan.map((item, index) => {
-                        const chartWidth = 940;
-                        const chartHeight = 280;
-                        const paddingX = 60;
-
-                        const x =
-                          grafikPendapatan.length === 1
-                            ? chartWidth / 2
-                            : paddingX +
-                            (index /
-                              (grafikPendapatan.length - 1)) *
-                            (chartWidth - paddingX * 2);
-
-                        const y =
-                          260 -
-                          (item.total / max) * 220;
-
-                        return (
-                          <circle
-                            key={index}
-                            cx={x}
-                            cy={y}
-                            r="5"
-                            fill="#6B4F4F"
-                          />
-                        );
-                      })}
-
-                      {/* Label Tanggal */}
-                      {grafikPendapatan.map((item, index) => {
-                        const chartWidth = 940;
-                        const paddingX = 60;
-
-                        const x =
-                          grafikPendapatan.length === 1
-                            ? chartWidth / 2
-                            : paddingX +
-                            (index / (grafikPendapatan.length - 1)) *
-                            (chartWidth - paddingX * 2);
-
-                        return (
+                          {/* Label rupiah sejajar persis dengan garis grid */}
                           <text
-                            key={`label-${index}`}
-                            x={x}
-                            y="295"
-                            textAnchor="middle"
-                            fontSize="12"
+                            x={chartLeft - 8}
+                            y={y + 4}
+                            textAnchor="end"
+                            fontSize="11"
                             fill="#666"
                           >
-                            {item.label}
+                            {`Rp ${rupiah(nilai)}`}
                           </text>
-                        );
-                      })}
-                    </>
-                  );
-                })()}
-              </svg>
+                        </g>
+                      );
+                    })}
 
-            </div>
+                    {/* Grid vertikal */}
+                    {grafikPendapatan.map((_, index) => {
+                      const x =
+                        grafikPendapatan.length === 1
+                          ? (chartLeft + chartRight) / 2
+                          : chartLeft +
+                            (index / (grafikPendapatan.length - 1)) *
+                              (chartRight - chartLeft);
+                      return (
+                        <line
+                          key={`v-${index}`}
+                          x1={x}
+                          y1={chartTop}
+                          x2={x}
+                          y2={chartBottom}
+                          stroke="#e5e5e5"
+                          strokeWidth="1"
+                        />
+                      );
+                    })}
+
+                    {/* Sumbu Y */}
+                    <line
+                      x1={chartLeft}
+                      y1={chartTop}
+                      x2={chartLeft}
+                      y2={chartBottom}
+                      stroke="#888"
+                      strokeWidth="2"
+                    />
+
+                    {/* Sumbu X */}
+                    <line
+                      x1={chartLeft}
+                      y1={chartBottom}
+                      x2={chartRight}
+                      y2={chartBottom}
+                      stroke="#888"
+                      strokeWidth="2"
+                    />
+
+                    {/* Area shading */}
+                    <polygon points={areaPoints} fill="#6B4F4F20" />
+
+                    {/* Garis grafik */}
+                    <polyline
+                      fill="none"
+                      stroke="#6B4F4F"
+                      strokeWidth="3"
+                      points={points}
+                    />
+
+                    {/* Titik + Label nilai di atas titik */}
+                    {grafikPendapatan.map((item, index) => {
+                      const x =
+                        grafikPendapatan.length === 1
+                          ? (chartLeft + chartRight) / 2
+                          : chartLeft +
+                            (index / (grafikPendapatan.length - 1)) *
+                              (chartRight - chartLeft);
+                      const y =
+                        chartBottom - (item.total / max) * chartHeight;
+
+                      return (
+                        <g key={index}>
+                          <circle cx={x} cy={y} r="5" fill="#6B4F4F" />
+                          {/* Nilai di atas titik — opsional, hapus jika terlalu ramai */}
+                          <text
+                            x={x}
+                            y={y - 10}
+                            textAnchor="middle"
+                            fontSize="10"
+                            fill="#6B4F4F"
+                            fontWeight="600"
+                          >
+                            {`Rp ${rupiah(item.total)}`}
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Label tanggal / periode di bawah sumbu X */}
+                    {grafikPendapatan.map((item, index) => {
+                      const x =
+                        grafikPendapatan.length === 1
+                          ? (chartLeft + chartRight) / 2
+                          : chartLeft +
+                            (index / (grafikPendapatan.length - 1)) *
+                              (chartRight - chartLeft);
+                      return (
+                        <text
+                          key={`label-${index}`}
+                          x={x}
+                          y={chartBottom + 18}
+                          textAnchor="middle"
+                          fontSize="11"
+                          fill="#666"
+                        >
+                          {item.label}
+                        </text>
+                      );
+                    })}
+                  </>
+                );
+              })()}
+            </svg>
+          </div>
           )}
         </div>
 
@@ -762,12 +818,6 @@ export default function Laporan() {
           </h2>
 
           {grafikMenu.map((item, i) => {
-
-            const max = Math.max(
-              ...grafikMenu.map(x => x.jumlah),
-              1
-            );
-
             return (
               <div
                 key={i}
@@ -782,8 +832,7 @@ export default function Laporan() {
                   <div
                     className="h-6 bg-[#6B4F4F] rounded"
                     style={{
-                      width: `${(item.jumlah / max) * 100
-                        }%`
+                      width: `${(item.jumlah / maxMenu) * 100}%`
                     }}
                   />
                 </div>

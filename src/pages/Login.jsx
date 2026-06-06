@@ -125,7 +125,7 @@ export default function Login() {
 
         {/* Judul */}
         <h1 className="text-white text-4xl md:text-5xl font-serif text-center mb-10 tracking-wide">
-          Mesombang Cafe
+          Mesombang Kafe
         </h1>
 
         {/* Error */}

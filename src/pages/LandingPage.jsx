@@ -25,7 +25,7 @@ export default function LandingPage() {
       {/* Kita gunakan animate-pulse diganti dengan efek transisi opacity */}
       <div className="relative z-10 text-center text-white animate-[fadeIn_2s_ease-in-out]">
         <h1 className="text-4xl md:text-5xl font-abhaya font-extrabold tracking-widest">
-          Mesombang Cafe
+          Mesombang Kafe
         </h1>
       </div>
 
